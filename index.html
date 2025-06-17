@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NOÛS ENGINE — Labyrinth of Signs</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600&family=Cormorant+Garamond:ital,wght@0,500;1,500&display=swap" rel="stylesheet">
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+/* ---------- THEME & LAYOUT ---------- */
+:root{
+    --bg:#111;--bg‑light:#1c1c1c;--fg:#eee;--accent:#d56aff;
+    --panel‑w:260px;--radius:12px;--font‑main:"EB Garamond",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font‑main);background:var(--bg);color:var(--fg);overflow:hidden}
+button,select,textarea,input{font-family:inherit;color:inherit}
+button{cursor:pointer;background:var(--accent);border:none;color:#fff;padding:.4rem .8rem;border-radius:var(--radius);transition:.2s}
+button:hover{filter:brightness(1.1)}
+.hidden{display:none!important}
+.app-grid{display:grid;grid-template-columns:var(--panel‑w) 1fr var(--panel‑w);height:100%}
+
+/* ---------- PANELS ---------- */
+.panel{padding:1rem;overflow-y:auto;background:var(--bg‑light)}
+.center-panel{border-left:1px solid #333;border-right:1px solid #333}
+#dialogue-output{height:45%;overflow-y:auto;border:1px dashed #444;padding:.75rem;border-radius:var(--radius);margin-bottom:.5rem;white-space:pre-wrap}
+#input-area{display:flex;gap:.5rem}
+#input-area textarea{flex:1;min-height:60px;background:#000;border:1px solid #444;border-radius:var(--radius);padding:.5rem}
+#input-area button{white-space:nowrap}
+.tool-button,.macro-button{display:block;width:100%;margin:.25rem 0;text-align:left}
+#journal-panel,#map-panel,#grimoire-overlay{position:absolute;top:10%;left:50%;transform:translateX(-50%);width:80%;max-width:800px;height:80%;background:var(--bg);border:2px solid var(--accent);border-radius:var(--radius);padding:1rem;overflow-y:auto;z-index:20}
+.close-panel-btn{float:right;background:#900;margin-left:.5rem}
+#journal-entry,#map-input{width:100%;height:230px;background:#000;border:1px solid #444;color:var(--fg);padding:.5rem;border-radius:var(--radius);margin:.5rem 0}
+.journal-input{width:100%;background:#000;border:1px solid #444;color:var(--fg);padding:.4rem;border-radius:var(--radius);margin:.25rem 0}
+.editor-info{font-size:.8rem;color:#888;margin-bottom:.5rem}
+.action-buttons{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
+#map-output{border:1px dashed #555;padding:.5rem;border-radius:var(--radius);margin-top:.5rem;overflow-x:auto}
+#session-tracker p{margin:.2rem 0;font-size:.9rem}
+select{background:#222;border:1px solid #555;border-radius:var(--radius);padding:.3rem}
+
+/* ---------- UTILITY ---------- */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#444;border-radius:3px}
+kbd{background:#333;padding:2px 5px;border-radius:4px;font-size:.8rem}
+</style>
+</head>
+<body>
+
+<div class="app-grid">
+
+    <!-- LEFT PANEL -->
+    <aside class="panel left-panel">
+        <div id="avatar-container" style="text-align:center">
+            <div id="avatar-silhouette" title="Professor Nihilist" style="font-size:2.2rem">👤</div>
+        </div>
+        <h2>Tools</h2>
+        <div id="tool-commands">
+            <button class="tool-button" data-command="/start">/start</button>
+            <button class="tool-button" data-command="/reason">/reason</button>
+            <button class="tool-button" data-command="/reframe">/reframe</button>
+            <button class="tool-button" data-command="/synthesize">/synthesize</button>
+            <button class="tool-button" data-command="/reflect">/reflect</button>
+            <button class="tool-button" data-command="/challenge">/challenge</button>
+            <button class="tool-button" data-command="/map">/map</button>
+            <button class="tool-button" data-command="/save">/save</button>
+        </div>
+        <button id="chaos-dial" style="width:100%;margin:.5rem 0">🌀 Chaos Dial</button>
+        <button id="thought-freeze" style="width:100%">🧊 Thought Freeze</button>
+    </aside>
+
+    <!-- CENTER PANEL -->
+    <main class="panel center-panel">
+        <div id="dialogue-output"><em>NOÛS ENGINE Initialized. Begin your inquiry…</em></div>
+
+        <div id="input-area">
+            <textarea id="user-input" placeholder="Enter your thought, query, or command…"></textarea>
+            <button id="send-button">Send (↵)</button>
+        </div>
+
+        <!-- JOURNAL -->
+        <section id="journal-panel" class="hidden">
+            <button class="close-panel-btn" data-panel="journal-panel">X</button>
+            <h2>Journal / Note</h2>
+
+            <input type="text" id="journal-title" placeholder="Note Title" class="journal-input">
+            <input type="text" id="journal-tags" placeholder="Tags (comma-separated)" class="journal-input">
+            <textarea id="journal-entry" placeholder="Markdown supported…"></textarea>
+
+            <div class="editor-info"><span id="word-count">0</span> words, <span id="char-count">0</span> chars</div>
+
+            <div id="md-preview-area" class="hidden" style="border:1px dashed #555;padding:.7rem;border-radius:var(--radius);background:#181818;max-height:240px;overflow-y:auto"></div>
+
+            <div class="action-buttons">
+                <button id="save-note-btn">Save Note (CTRL+S)</button>
+                <button id="clear-entry-btn">Clear</button>
+                <button id="delete-entry-btn">Delete</button>
+                <button id="md-preview-btn">MD Preview</button>
+                <select id="export-ritual-select">
+                    <option value="stone">Etch in Stone</option>
+                    <option value="void">Release into Void</option>
+                    <option value="archive">Whisper to Archive</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- MAP -->
+        <section id="map-panel" class="hidden">
+            <button class="close-panel-btn" data-panel="map-panel">X</button>
+            <h2>Concept Map (/map)</h2>
+            <textarea id="map-input" placeholder="Mermaid syntax here e.g., graph TD; A-->B;"></textarea>
+            <button id="render-map">Render Map</button>
+            <button id="export-map-svg">Export SVG</button>
+            <div id="map-output" class="mermaid"></div>
+        </section>
+
+        <!-- GRIMOIRE -->
+        <section id="grimoire-overlay" class="hidden">
+            <button class="close-panel-btn" data-panel="grimoire-overlay">X</button>
+            <h2>The Obsidian Grimoire</h2>
+            <p>Whispers echo in the margins…</p>
+        </section>
+    </main>
+
+    <!-- RIGHT PANEL -->
+    <aside class="panel right-panel">
+        <h2>Macros</h2>
+        <div id="macro-commands">
+            <button class="macro-button" data-macro="deepthink">/deepthink</button>
+            <button class="macro-button" data-macro="claritybomb">/claritybomb</button>
+            <button class="macro-button" data-macro="dispute">/dispute</button>
+            <button class="macro-button" data-macro="archivist">/archivist</button>
+            <button class="macro-button" data-macro="resetfocus">/resetfocus</button>
+        </div>
+
+        <h2>Session State</h2>
+        <div id="session-tracker">
+            <p><strong>Topic:</strong> <span id="session-topic">Undefined</span></p>
+            <p><strong>Tone:</strong> <span id="session-tone">Analytical</span></p>
+            <p><strong>Last Tools:</strong> <span id="session-history">None</span></p>
+            <p><strong>Suggestion:</strong> <span id="session-suggestion">/start</span></p>
+        </div>
+
+        <button id="toggle-grimoire" style="margin:.5rem 0">Toggle Grimoire Mode</button>
+
+        <h2>Quick Palette (<kbd>CTRL</kbd>+<kbd>P</kbd>)</h2>
+        <input type="text" id="palette-input" placeholder="Type a command…" class="journal-input hidden">
+    </aside>
+</div>
+
+<script>
+/* ---------- INIT LIBS ---------- */
+mermaid.initialize({startOnLoad:false,theme:'dark'});
+
+/* ---------- HELPERS ---------- */
+const qs = s=>document.querySelector(s);
+const qsa = s=>[...document.querySelectorAll(s)];
+const storage = JSON.parse(localStorage.getItem('nous-notes')||'[]');
+let API_KEY = ''; // <‑‑‑ paste your OpenAI key to enable AI responses
+
+/* ---------- DIALOGUE ---------- */
+function appendMsg(text,cls='user'){const box=document.createElement('p');box.textContent=text;box.className=cls;qs('#dialogue-output').appendChild(box);qs('#dialogue-output').scrollTop=qs('#dialogue-output').scrollHeight}
+function sendToGPT(prompt){
+    if(!API_KEY){appendMsg('[Set API_KEY in code to enable AI.]','ai');return}
+    fetch('https://api.openai.com/v1/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
+        body:JSON.stringify({model:'gpt-3.5-turbo',messages:[{role:'user',content:prompt}]})
+    })
+    .then(r=>r.json()).then(d=>appendMsg(d.choices[0].message.content.trim(),'ai'))
+    .catch(()=>appendMsg('[Error contacting AI]','ai'));
+}
+
+/* ---------- COMMAND HANDLERS ---------- */
+function handleCommand(cmd){
+    switch(cmd){
+        case '/map': togglePanel('#map-panel');break;
+        case '/save': togglePanel('#journal-panel');break;
+        default: appendMsg('Executed '+cmd,'sys');
+    }
+    qs('#session-history').textContent=cmd;
+}
+qsa('.tool-button').forEach(b=>b.onclick=()=>{qs('#user-input').value=b.dataset.command;qs('#user-input').focus()});
+qsa('.macro-button').forEach(b=>b.onclick=()=>{appendMsg('Macro '+b.dataset.macro+' fired','sys')});
+
+/* ---------- PANELS ---------- */
+function togglePanel(sel){
+    const el=qs(sel); el.classList.toggle('hidden');}
+qsa('.close-panel-btn').forEach(btn=>btn.onclick=()=>togglePanel('#'+btn.dataset.panel));
+qs('#toggle-grimoire').onclick=()=>togglePanel('#grimoire-overlay');
+
+/* ---------- INPUT ---------- */
+function submitInput(){
+    const val=qs('#user-input').value.trim(); if(!val)return;
+    appendMsg(val,'user'); qs('#user-input').value='';
+    if(val.startsWith('/')) handleCommand(val);
+    else sendToGPT(val);
+}
+qs('#send-button').onclick=submitInput;
+qs('#user-input').addEventListener('keydown',e=>{if(e.key==='Enter'&& !e.shiftKey){e.preventDefault();submitInput()}});
+
+/* ---------- CHAOS / FREEZE ---------- */
+const chaosPrompts=['What hides between axioms?','Invert the premise of identity.','Sketch the topology of absence.'];
+qs('#chaos-dial').onclick=()=>{qs('#user-input').value=chaosPrompts[Math.floor(Math.random()*chaosPrompts.length)]};
+qs('#thought-freeze').onclick=()=>{localStorage.setItem('nous-freeze',qs('#dialogue-output').innerText);appendMsg('[Dialogue frozen]','sys')};
+
+/* ---------- JOURNAL ---------- */
+function updateCounts(){
+    const t=qs('#journal-entry').value;
+    qs('#word-count').textContent=t.split(/\s+/).filter(Boolean).length;
+    qs('#char-count').textContent=t.length;
+}
+qs('#journal-entry').oninput=updateCounts;
+qs('#md-preview-btn').onclick=()=>{
+    const prev=qs('#md-preview-area');
+    if(prev.classList.toggle('hidden')) return;
+    prev.innerHTML=marked.parse(qs('#journal-entry').value);
+};
+qs('#clear-entry-btn').onclick=()=>{qs('#journal-title').value='';qs('#journal-tags').value='';qs('#journal-entry').value='';updateCounts()};
+qs('#save-note-btn').onclick=saveNote;
+qs('#delete-entry-btn').onclick=()=>{if(confirm('Delete note?')) deleteCurrentNote()};
+
+/* ---------- NOTE STORAGE ---------- */
+function saveNote(){
+    const note={id:Date.now(),title:qs('#journal-title').value||'Untitled',tags:qs('#journal-tags').value.split(',').map(s=>s.trim()).filter(Boolean),body:qs('#journal-entry').value,date:new Date().toISOString()};
+    storage.push(note);localStorage.setItem('nous-notes',JSON.stringify(storage));appendMsg('Note saved','sys');togglePanel('#journal-panel');
+}
+function deleteCurrentNote(){/* placeholder */}
+
+/* ---------- MAP PANEL ---------- */
+qs('#render-map').onclick=()=>{
+    const code=qs('#map-input').value.trim(); if(!code)return;
+    mermaid.render('mapSvg',code,(svg)=>{qs('#map-output').innerHTML=svg});
+};
+qs('#export-map-svg').onclick=()=>{
+    const svg=qs('#map-output svg'); if(!svg){alert('Render map first');return}
+    const blob=new Blob([svg.outerHTML],{type:'image/svg+xml'});const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='concept-map.svg';a.click();URL.revokeObjectURL(url);
+};
+
+/* ---------- QUICK PALETTE ---------- */
+const palette=qs('#palette-input');
+document.addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.key==='p'){e.preventDefault();palette.classList.toggle('hidden');palette.focus()}
+    if(e.ctrlKey&&e.key==='s'&&!qs('#journal-panel').classList.contains('hidden')){e.preventDefault();saveNote()}
+});
+palette.oninput=()=>{
+    const v=palette.value.trim();if(v.startsWith('/')){handleCommand(v);palette.value='';palette.classList.add('hidden')}
+};
+
+/* ---------- INIT SAVED FREEZE ---------- */
+const frozen=localStorage.getItem('nous-freeze'); if(frozen) appendMsg('[Loaded frozen dialogue]','sys'),appendMsg(frozen,'ai');
+</script>
+</body>
+</html>

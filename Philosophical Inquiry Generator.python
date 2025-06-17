@@ -1,0 +1,381 @@
+import json
+import os
+import os.path as osp
+import time
+from typing import List, Dict, Union
+from philosophy_llm import get_response_from_llm, extract_json_between_markers
+
+import requests
+import backoff
+
+PHILOSOPHY_API_KEY = os.getenv("PHILOSOPHY_API_KEY")
+
+philosophical_inquiry_prompt = """{task_description}
+<philosophical_treatise.md>
+{treatise}
+</philosophical_treatise.md>
+
+Here are the philosophical inquiries you have already generated:
+
+'''
+{prev_inquiries_string}
+'''
+
+Come up with the next impactful and creative philosophical inquiry and directions you can feasibly investigate with the treatise provided.
+Note that you will not have access to any additional resources or datasets.
+Make sure any inquiry is not overly specific to a particular philosophical tradition, and has wider significance across multiple schools of thought.
+
+Respond in the following format:
+
+THOUGHT:
+<THOUGHT>
+
+NEW INQUIRY JSON:
+```json
+<JSON>
+```
+
+In <THOUGHT>, first briefly discuss your intuitions and motivations for the inquiry. Detail your high-level plan, necessary conceptual frameworks and ideal outcomes of the philosophical exploration. Justify how the inquiry is different from the existing ones.
+
+In <JSON>, provide the new inquiry in JSON format with the following fields:
+- "Name": A shortened descriptor of the inquiry. Lowercase, no spaces, underscores allowed.
+- "Title": A title for the philosophical inquiry, will be used for the treatise writing.
+- "Exploration": An outline of the philosophical investigation. E.g. which concepts need to be examined or redefined, how arguments will be constructed, ...
+- "Profundity": A rating from 1 to 10 (lowest to highest).
+- "Feasibility": A rating from 1 to 10 (lowest to highest).
+- "Originality": A rating from 1 to 10 (lowest to highest).
+
+Be cautious and realistic on your ratings.
+This JSON will be automatically parsed, so ensure the format is precise.
+You will have {num_reflections} rounds to iterate on the inquiry, but do not need to use them all.
+"""
+
+inquiry_reflection_prompt = """Round {current_round}/{num_reflections}.
+In your thoughts, first carefully consider the quality, originality, and feasibility of the inquiry you just created.
+Include any other factors that you think are important in evaluating the philosophical inquiry.
+Ensure the inquiry is clear and concise, and the JSON is the correct format.
+Do not make things overly complicated.
+In the next attempt, try and refine and improve your inquiry.
+Stick to the spirit of the original inquiry unless there are glaring issues.
+
+Respond in the same format as before:
+THOUGHT:
+<THOUGHT>
+
+NEW INQUIRY JSON:
+```json
+<JSON>
+```
+
+If there is nothing to improve, simply repeat the previous JSON EXACTLY after the thought and include "I am done" at the end of the thoughts but before the JSON.
+ONLY INCLUDE "I am done" IF YOU ARE MAKING NO MORE CHANGES."""
+
+
+# GENERATE PHILOSOPHICAL INQUIRIES
+def generate_philosophical_inquiries(
+    base_dir,
+    client,
+    model,
+    skip_generation=False,
+    max_num_generations=20,
+    num_reflections=5,
+):
+    if skip_generation:
+        # Load existing inquiries from file
+        try:
+            with open(osp.join(base_dir, "inquiries.json"), "r") as f:
+                inquiries = json.load(f)
+            print("Loaded existing philosophical inquiries:")
+            for inquiry in inquiries:
+                print(inquiry)
+            return inquiries
+        except FileNotFoundError:
+            print("No existing inquiries found. Generating new philosophical inquiries.")
+        except json.JSONDecodeError:
+            print("Error decoding existing inquiries. Generating new philosophical inquiries.")
+
+    inquiry_str_archive = []
+    with open(osp.join(base_dir, "seed_inquiries.json"), "r") as f:
+        seed_inquiries = json.load(f)
+    for seed_inquiry in seed_inquiries:
+        inquiry_str_archive.append(json.dumps(seed_inquiry))
+
+    with open(osp.join(base_dir, "philosophical_treatise.md"), "r") as f:
+        treatise = f.read()
+
+    with open(osp.join(base_dir, "prompt.json"), "r") as f:
+        prompt = json.load(f)
+
+    inquiry_system_prompt = prompt["system"]
+
+    for _ in range(max_num_generations):
+        print()
+        print(f"Generating philosophical inquiry {_ + 1}/{max_num_generations}")
+        try:
+            prev_inquiries_string = "\n\n".join(inquiry_str_archive)
+
+            msg_history = []
+            print(f"Iteration 1/{num_reflections}")
+            text, msg_history = get_response_from_llm(
+                philosophical_inquiry_prompt.format(
+                    task_description=prompt["task_description"],
+                    treatise=treatise,
+                    prev_inquiries_string=prev_inquiries_string,
+                    num_reflections=num_reflections,
+                ),
+                client=client,
+                model=model,
+                system_message=inquiry_system_prompt,
+                msg_history=msg_history,
+            )
+            ## PARSE OUTPUT
+            json_output = extract_json_between_markers(text)
+            assert json_output is not None, "Failed to extract JSON from LLM output"
+            print(json_output)
+
+            # Iteratively improve inquiry.
+            if num_reflections > 1:
+                for j in range(num_reflections - 1):
+                    print(f"Iteration {j + 2}/{num_reflections}")
+                    text, msg_history = get_response_from_llm(
+                        inquiry_reflection_prompt.format(
+                            current_round=j + 2, num_reflections=num_reflections
+                        ),
+                        client=client,
+                        model=model,
+                        system_message=inquiry_system_prompt,
+                        msg_history=msg_history,
+                    )
+                    ## PARSE OUTPUT
+                    json_output = extract_json_between_markers(text)
+                    assert (
+                        json_output is not None
+                    ), "Failed to extract JSON from LLM output"
+                    print(json_output)
+
+                    if "I am done" in text:
+                        print(f"Philosophical inquiry generation converged after {j + 2} iterations.")
+                        break
+
+            inquiry_str_archive.append(json.dumps(json_output))
+        except Exception as e:
+            print(f"Failed to generate philosophical inquiry: {e}")
+            continue
+
+    ## SAVE INQUIRIES
+    inquiries = []
+    for inquiry_str in inquiry_str_archive:
+        inquiries.append(json.loads(inquiry_str))
+
+    with open(osp.join(base_dir, "inquiries.json"), "w") as f:
+        json.dump(inquiries, f, indent=4)
+
+    return inquiries
+
+
+# GENERATE PHILOSOPHICAL INQUIRIES OPEN-ENDED
+def generate_next_inquiry(
+    base_dir,
+    client,
+    model,
+    prev_inquiry_archive=[],
+    num_reflections=5,
+    max_attempts=10,
+):
+    inquiry_archive = prev_inquiry_archive
+    original_archive_size = len(inquiry_archive)
+
+    print(f"Generating philosophical inquiry {original_archive_size + 1}")
+
+    if len(prev_inquiry_archive) == 0:
+        print(f"First iteration, taking seed inquiries")
+        # seed the archive on the first run with pre-existing inquiries
+        with open(osp.join(base_dir, "seed_inquiries.json"), "r") as f:
+            seed_inquiries = json.load(f)
+        for seed_inquiry in seed_inquiries[:1]:
+            inquiry_archive.append(seed_inquiry)
+    else:
+        with open(osp.join(base_dir, "philosophical_treatise.md"), "r") as f:
+            treatise = f.read()
+        with open(osp.join(base_dir, "prompt.json"), "r") as f:
+            prompt = json.load(f)
+        inquiry_system_prompt = prompt["system"]
+
+        for _ in range(max_attempts):
+            try:
+                inquiry_strings = []
+                for inquiry in inquiry_archive:
+                    inquiry_strings.append(json.dumps(inquiry))
+                prev_inquiries_string = "\n\n".join(inquiry_strings)
+
+                msg_history = []
+                print(f"Iteration 1/{num_reflections}")
+                text, msg_history = get_response_from_llm(
+                    philosophical_inquiry_prompt.format(
+                        task_description=prompt["task_description"],
+                        treatise=treatise,
+                        prev_inquiries_string=prev_inquiries_string,
+                        num_reflections=num_reflections,
+                    )
+                    + """
+Completed inquiries have an additional "Impact" field which indicates the assessment by an expert philosopher reviewer.
+This is on a standard 1-10 philosophical significance scale.
+Impacts of 0 indicate the inquiry failed either during exploration, treatise writing or peer review.
+""",
+                    client=client,
+                    model=model,
+                    system_message=inquiry_system_prompt,
+                    msg_history=msg_history,
+                )
+                ## PARSE OUTPUT
+                json_output = extract_json_between_markers(text)
+                assert json_output is not None, "Failed to extract JSON from LLM output"
+                print(json_output)
+
+                # Iteratively improve inquiry.
+                if num_reflections > 1:
+                    for j in range(num_reflections - 1):
+                        print(f"Iteration {j + 2}/{num_reflections}")
+                        text, msg_history = get_response_from_llm(
+                            inquiry_reflection_prompt.format(
+                                current_round=j + 2, num_reflections=num_reflections
+                            ),
+                            client=client,
+                            model=model,
+                            system_message=inquiry_system_prompt,
+                            msg_history=msg_history,
+                        )
+                        ## PARSE OUTPUT
+                        json_output = extract_json_between_markers(text)
+                        assert (
+                            json_output is not None
+                        ), "Failed to extract JSON from LLM output"
+                        print(json_output)
+
+                        if "I am done" in text:
+                            print(
+                                f"Philosophical inquiry generation converged after {j + 2} iterations."
+                            )
+                            break
+
+                inquiry_archive.append(json_output)
+                break
+            except Exception as e:
+                print(f"Failed to generate philosophical inquiry: {e}")
+                continue
+
+    ## SAVE INQUIRIES
+    with open(osp.join(base_dir, "inquiries.json"), "w") as f:
+        json.dump(inquiry_archive, f, indent=4)
+
+    return inquiry_archive
+
+
+def on_backoff(details):
+    print(
+        f"Backing off {details['wait']:0.1f} seconds after {details['tries']} tries "
+        f"calling function {details['target'].__name__} at {time.strftime('%X')}"
+    )
+
+
+@backoff.on_exception(
+    backoff.expo, requests.exceptions.HTTPError, on_backoff=on_backoff
+)
+def search_for_philosophical_works(query, result_limit=10) -> Union[None, List[Dict]]:
+    if not query:
+        return None
+    rsp = requests.get(
+        "https://api.philosophyarchive.org/graph/v1/work/search",
+        headers={"X-API-KEY": PHILOSOPHY_API_KEY},
+        params={
+            "query": query,
+            "limit": result_limit,
+            "fields": "title,authors,school,year,abstract,citationStyles,influenceCount",
+        },
+    )
+    print(f"Response Status Code: {rsp.status_code}")
+    print(
+        f"Response Content: {rsp.text[:500]}"
+    ) # Print the first 500 characters of the response content
+    rsp.raise_for_status()
+    results = rsp.json()
+    total = results["total"]
+    time.sleep(1.0)
+    if not total:
+        return None
+
+    works = results["data"]
+    return works
+
+
+originality_system_msg = """You are an ambitious AI PhD student in philosophy who is looking to publish a groundbreaking philosophical treatise that will contribute significantly to the field.
+You have a philosophical inquiry and you want to check if it is original or not. I.e., not overlapping significantly with existing philosophical works or already well explored.
+Be a harsh critic for originality, ensure there is a sufficient contribution in the inquiry for a new philosophical treatise or journal article.
+You will be given access to the Philosophy Archive API, which you may use to survey the literature and find relevant works to help you make your decision.
+The top 10 results for any search query will be presented to you with the abstracts.
+
+You will be given {num_rounds} to decide on the philosophical inquiry, but you do not need to use them all.
+At any round, you may exit early and decide on the originality of the inquiry.
+Decide a philosophical inquiry is original if after sufficient searching, you have not found a work that significantly overlaps with your inquiry.
+Decide a philosophical inquiry is not original, if you have found a work that significantly overlaps with your inquiry.
+
+{task_description}
+<philosophical_treatise.md>
+{treatise}
+</philosophical_treatise.md>
+"""
+
+originality_prompt = '''Round {current_round}/{num_rounds}.
+You have this philosophical inquiry:
+
+"""
+{inquiry}
+"""
+
+The results of the last query are (empty on first round):
+"""
+{last_query_results}
+"""
+
+Respond in the following format:
+
+THOUGHT:
+<THOUGHT>
+
+RESPONSE:
+```json
+<JSON>
+```
+
+In <THOUGHT>, first briefly reason over the inquiry and identify any query that could help you make your decision.
+If you have made your decision, add "Decision made: original." or "Decision made: not original." to your thoughts.
+
+In <JSON>, respond in JSON format with ONLY the following field:
+- "Query": An optional search query to search the philosophical literature (e.g. Kant's categorical imperative). You must make a query if you have not decided this round.
+
+A query will work best if you are able to recall the exact name of the philosophical work you are looking for, or the philosophers.
+This JSON will be automatically parsed, so ensure the format is precise.'''
+
+
+def check_inquiry_originality(
+    inquiries,
+    base_dir,
+    client,
+    model,
+    max_num_iterations=10,
+):
+    with open(osp.join(base_dir, "philosophical_treatise.md"), "r") as f:
+        treatise = f.read()
+    with open(osp.join(base_dir, "prompt.json"), "r") as f:
+        prompt = json.load(f)
+        task_description = prompt["task_description"]
+
+    for idx, inquiry in enumerate(inquiries):
+        if "original" in inquiry:
+            print(f"Skipping inquiry {idx}, already checked.")
+            continue
+
+        print(f"\nChecking originality of philosophical inquiry {idx}: {inquiry['Name']}")
+
+        original = False
+        msg_history = []

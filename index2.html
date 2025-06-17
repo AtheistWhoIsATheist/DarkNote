@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dark Notes</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<style>
+/* ─────  COLOR SYSTEM  ───── */
+:root{
+  --bg-1:#0d0d0d;
+  --bg-2:#1a1a1a;
+  --panel:#171717aa;          /* translucent */
+  --border:#ffffff14;
+  --border-active:#6f4dff80;
+  --fg-1:#eaeaea;
+  --fg-2:#9c9c9c;
+  --accent:#6f4dff;           /* violet */
+  --radius:14px;
+  --panel-w:270px;
+  --shadow:0 8px 18px rgba(0,0,0,.45);
+}
+
+/* ─────  RESET / BASE  ───── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:"Inter",sans-serif;background:var(--bg-1);
+          background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 100%);
+          color:var(--fg-1);overflow:hidden}
+button,select,input,textarea{font-family:inherit;color:inherit}
+button{cursor:pointer;border:none;border-radius:var(--radius);
+       background:var(--accent);color:#fff;padding:.4rem .9rem;
+       transition:.15s}
+button:hover{filter:brightness(1.15)}
+.hidden{display:none!important}
+
+/* ─────  GRID LAYOUT  ───── */
+.app{display:grid;grid-template-columns:var(--panel-w) 1fr var(--panel-w);height:100%}
+.panel{padding:1.2rem;background:var(--panel);backdrop-filter:blur(14px);
+       box-shadow:var(--shadow);overflow-y:auto}
+.center{border-left:1px solid var(--border);border-right:1px solid var(--border)}
+h2{font-weight:500;margin-bottom:.6rem}
+
+/* ─────  LEFT PANEL  ───── */
+#search-notes{width:100%;padding:.5rem;border:1px solid var(--border);
+              background:#00000036;border-radius:var(--radius);color:var(--fg-1)}
+.tool-button{width:100%;margin:.3rem 0;text-align:left;background:#00000036;
+             border:1px solid var(--border);padding:.45rem;border-radius:var(--radius)}
+.tool-button:hover{border-color:var(--border-active);background:#00000055}
+
+/* ─────  CENTER PANEL  ───── */
+#dialogue-output{height:46%;padding:.9rem;border:1px dashed var(--border);
+                 border-radius:var(--radius);overflow-y:auto;white-space:pre-wrap;
+                 background:#0000002c;margin-bottom:1rem}
+#input-area{display:flex;gap:.5rem}
+#user-input{flex:1;min-height:66px;padding:.55rem;border:1px solid var(--border);
+           background:#00000036;border-radius:var(--radius);resize:vertical}
+#send-button{white-space:nowrap}
+p.ai{color:var(--accent)}
+p.sys{color:var(--fg-2);font-style:italic}
+
+section.overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+                width:82%;max-width:840px;height:82%;background:var(--panel);
+                border:1px solid var(--border-active);backdrop-filter:blur(16px);
+                border-radius:var(--radius);padding:1.2rem;overflow-y:auto;z-index:50}
+
+/* ─ journal specific */
+#journal-entry,#map-input{width:100%;height:230px;padding:.7rem;
+                          background:#00000036;border:1px solid var(--border);
+                          border-radius:var(--radius);resize:vertical;color:var(--fg-1);margin:.6rem 0}
+.journal-input{width:100%;padding:.55rem;border:1px solid var(--border);
+               background:#00000036;border-radius:var(--radius);margin:.35rem 0}
+.editor-info{font-size:.8rem;color:var(--fg-2)}
+.action-buttons{display:flex;flex-wrap:wrap;gap:.6rem;margin:.6rem 0}
+
+/* ─ map specific */
+#map-output{margin-top:.8rem;border:1px dashed var(--border);
+            border-radius:var(--radius);padding:.6rem;overflow-x:auto}
+
+/* ─────  RIGHT PANEL  ───── */
+#session-tracker p{font-size:.85rem;margin:.25rem 0}
+.macro-button{display:block;width:100%;text-align:left;
+              background:#00000036;border:1px solid var(--border);
+              margin:.28rem 0;padding:.5rem;border-radius:var(--radius)}
+.macro-button:hover{border-color:var(--border-active);background:#00000055}
+#palette-input{width:100%;padding:.45rem;border:1px solid var(--border);
+               background:#0000003a;border-radius:var(--radius);margin-top:.4rem}
+
+/* ─────  SCROLLBAR  ───── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:#444;border-radius:3px}
+
+/* ─────  UTILS  ───── */
+#toggle-grimoire{margin-top:.8rem;background:#00000036;border:1px solid var(--border)}
+.close{float:right;background:#e03e3e}
+kbd{background:#2a2a2a;padding:2px 6px;border-radius:4px;font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- LEFT -->
+  <aside class="panel">
+      <h2>Dark Notes</h2>
+      <input id="search-notes" placeholder="Search notes…">
+      <div style="margin-top:1rem">
+        <button class="tool-button" data-command="/start">/start</button>
+        <button class="tool-button" data-command="/reason">/reason</button>
+        <button class="tool-button" data-command="/map">/map</button>
+        <button class="tool-button" data-command="/save">/save</button>
+      </div>
+      <button id="chaos-dial" style="margin-top:1rem;width:100%">🌀 Chaos Dial</button>
+  </aside>
+
+  <!-- CENTER -->
+  <main class="panel center">
+      <div id="dialogue-output"><em>NOÛS ENGINE ready — type or pick a command.</em></div>
+
+      <div id="input-area">
+          <textarea id="user-input" placeholder="Enter thought, query, or command…"></textarea>
+          <button id="send-button">Send (↵)</button>
+      </div>
+
+      <!-- Journal -->
+      <section id="journal-panel" class="overlay hidden">
+          <button class="close close-panel" data-panel="journal-panel">✕</button>
+          <h2>Journal / Note</h2>
+          <input id="journal-title" class="journal-input" placeholder="Note title">
+          <input id="journal-tags" class="journal-input" placeholder="Tags (comma-separated)">
+          <textarea id="journal-entry" placeholder="Markdown supported…"></textarea>
+          <div class="editor-info"><span id="word-count">0</span> words • <span id="char-count">0</span> chars</div>
+          <div id="md-preview-area" class="hidden" style="border:1px dashed var(--border);border-radius:var(--radius);padding:.7rem;max-height:240px;overflow-y:auto"></div>
+          <div class="action-buttons">
+              <button id="save-note-btn">Save (CTRL+S)</button>
+              <button id="clear-entry-btn">Clear</button>
+              <button id="delete-entry-btn">Delete</button>
+              <button id="md-preview-btn">MD Preview</button>
+          </div>
+      </section>
+
+      <!-- Map -->
+      <section id="map-panel" class="overlay hidden">
+          <button class="close close-panel" data-panel="map-panel">✕</button>
+          <h2>Concept Map (/map)</h2>
+          <textarea id="map-input" placeholder="Mermaid syntax e.g., graph TD; A-->B;"></textarea>
+          <button id="render-map">Render Map</button>
+          <button id="export-map-svg">Export SVG</button>
+          <div id="map-output" class="mermaid"></div>
+      </section>
+
+      <!-- Grimoire -->
+      <section id="grimoire-overlay" class="overlay hidden">
+          <button class="close close-panel" data-panel="grimoire-overlay">✕</button>
+          <h2>The Obsidian Grimoire</h2>
+          <p>Whispers echo in the margins…</p>
+      </section>
+  </main>
+
+  <!-- RIGHT -->
+  <aside class="panel">
+      <h2>Macros</h2>
+      <button class="macro-button" data-macro="deepthink">/deepthink</button>
+      <button class="macro-button" data-macro="claritybomb">/claritybomb</button>
+      <button class="macro-button" data-macro="archivist">/archivist</button>
+
+      <h2 style="margin-top:1.2rem">Session</h2>
+      <div id="session-tracker">
+          <p><strong>Topic:</strong> <span id="session-topic">—</span></p>
+          <p><strong>History:</strong> <span id="session-history">none</span></p>
+      </div>
+
+      <button id="toggle-grimoire">Toggle AI Agent Sidebar</button>
+
+      <h2 style="margin-top:1rem">Palette <kbd>CTRL</kbd>+<kbd>P</kbd></h2>
+      <input id="palette-input" class="hidden" placeholder="Type a command…">
+  </aside>
+</div>
+
+<script>
+/* ─────  LIB INIT  ───── */
+mermaid.initialize({startOnLoad:false,theme:'dark'});
+
+/* ─────  UTILS  ───── */
+const qs = s=>document.querySelector(s);
+const qsa = s=>[...document.querySelectorAll(s)];
+let API_KEY=''; // <- drop your key here for GPT
+
+function msg(txt,cls='user'){
+  const p=document.createElement('p');p.textContent=txt;p.className=cls;
+  qs('#dialogue-output').appendChild(p);
+  qs('#dialogue-output').scrollTop=qs('#dialogue-output').scrollHeight;
+}
+
+/* ─────  SEND  ───── */
+function run(){
+  const v=qs('#user-input').value.trim();if(!v)return;
+  qs('#user-input').value='';msg(v);
+  if(v.startsWith('/')) return handleCmd(v);
+  if(!API_KEY) return msg('[Set API_KEY to enable GPT.]','sys');
+  fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
+      body:JSON.stringify({model:'gpt-3.5-turbo',messages:[{role:'user',content:v}]})
+  }).then(r=>r.json()).then(d=>msg(d.choices[0].message.content.trim(),'ai'))
+    .catch(()=>msg('[GPT error]','sys'));
+}
+qs('#send-button').onclick=run;
+qs('#user-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();run()}});
+
+/* ─────  COMMANDS  ───── */
+function toggle(id){qs(id).classList.toggle('hidden')}
+function handleCmd(c){
+  switch(c){
+    case '/map':toggle('#map-panel');break;
+    case '/save':toggle('#journal-panel');break;
+    default:msg('Ran '+c,'sys');
+  }
+  qs('#session-history').textContent=c;
+}
+qsa('.tool-button').forEach(b=>b.onclick=()=>{qs('#user-input').value=b.dataset.command;qs('#user-input').focus()});
+qsa('.macro-button').forEach(b=>b.onclick=()=>msg('Macro '+b.dataset.macro,'sys'));
+
+/* ─────  PANELS CLOSE  ───── */
+qsa('.close-panel').forEach(btn=>btn.onclick=()=>toggle('#'+btn.dataset.panel));
+qs('#toggle-grimoire').onclick=()=>toggle('#grimoire-overlay');
+
+/* ─────  CHAOS  ───── */
+const chaos=['Invert an axiom.','Diagram despair.','Where does absence live?'];
+qs('#chaos-dial').onclick=()=>qs('#user-input').value=chaos[Math.random()*chaos.length|0];
+
+/* ─────  JOURNAL  ───── */
+function count(){const t=qs('#journal-entry').value;
+  qs('#word-count').textContent=t.split(/\s+/).filter(Boolean).length;
+  qs('#char-count').textContent=t.length;}
+qs('#journal-entry').oninput=count;
+qs('#md-preview-btn').onclick=()=>{const a=qs('#md-preview-area');
+  if(a.classList.toggle('hidden'))return;a.innerHTML=marked.parse(qs('#journal-entry').value);};
+qs('#clear-entry-btn').onclick=()=>{qs('#journal-title').value='';qs('#journal-tags').value='';qs('#journal-entry').value='';count()};
+
+/* ─────  MAP  ───── */
+qs('#render-map').onclick=()=>{
+  const code=qs('#map-input').value.trim();if(!code)return;
+  mermaid.render('svgID',code,svg=>qs('#map-output').innerHTML=svg);
+}
+qs('#export-map-svg').onclick=()=>{
+  const svg=qs('#map-output svg');if(!svg)return alert('render first');
+  const blob=new Blob([svg.outerHTML],{type:'image/svg+xml'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='map.svg';a.click();
+}
+
+/* ─────  PALETTE  ───── */
+const pal=qs('#palette-input');
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.key==='p'){e.preventDefault();pal.classList.toggle('hidden');pal.focus()}
+  if(e.ctrlKey&&e.key==='s'&&!qs('#journal-panel').classList.contains('hidden')){e.preventDefault();msg('Note saved (stub)','sys')}
+});
+pal.oninput=()=>{if(pal.value.startsWith('/')){handleCmd(pal.value.trim());pal.value='';pal.classList.add('hidden')}};
+</script>
+</body>
+</html>

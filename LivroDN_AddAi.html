@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paralyzing Nihilism</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: #e0e0e0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      padding: 15px 25px;
+      background: rgba(40, 40, 40, 0.9);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+    }
+
+    .nav-button {
+      margin-right: 25px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #8b8b8b;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 300;
+      letter-spacing: 1px;
+      color: #d4d4d4;
+    }
+
+    .nav-links {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 60px;
+      left: 25px;
+      background: rgba(50, 50, 50, 0.95);
+      border-radius: 8px;
+      z-index: 10;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-links a {
+      padding: 12px 20px;
+      text-decoration: none;
+      color: #a0a0a0;
+      border-bottom: 1px solid rgba(80, 80, 80, 0.3);
+    }
+
+    #journal-container {
+      flex: 1;
+      padding: 20px;
+      margin: 10px;
+      border-radius: 8px;
+      background: rgba(25, 25, 25, 0.8);
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
+    }
+
+    #journal-editor,
+    #markdown-preview {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      color: #e0e0e0;
+      font-size: 16px;
+      line-height: 1.6;
+      font-family: 'Courier New', monospace;
+    }
+
+    #journal-editor:focus {
+      outline: none;
+    }
+
+    #markdown-preview {
+      display: none;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 0 0 10px;
+    }
+
+    .controls button {
+      background: none;
+      border: 1px solid #444;
+      color: #ccc;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .controls button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background: rgba(40, 40, 40, 0.9);
+      box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+    }
+
+    .footer-text {
+      font-size: 14px;
+      color: #8b8b8b;
+      font-style: italic;
+    }
+
+    .arrows {
+      display: flex;
+      gap: 15px;
+    }
+
+    .arrow {
+      cursor: pointer;
+      font-size: 16px;
+      color: #8b8b8b;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="nav-button" onclick="toggleNav()">☰</button>
+    <div class="page-title">Paralyzing Nihilism</div>
+  </header>
+
+  <div class="nav-links" id="navLinks">
+    <a href="#page1">Void Chronicles</a>
+    <a href="#page2">Ego Dissolution</a>
+    <a href="#page3">Transcendental Notes</a>
+  </div>
+
+  <div class="controls">
+    <button onclick="togglePreview()">Toggle Preview</button>
+    <button onclick="exportMarkdown()">Export .md</button>
+  </div>
+
+  <div id="journal-container">
+    <textarea id="journal-editor" placeholder="# Begin your existential chronicle..."></textarea>
+    <div id="markdown-preview"></div>
+  </div>
+
+  <footer>
+    <div class="footer-text">The Religious Experience of Nihilism</div>
+    <div class="arrows">
+      <a href="#prev" class="arrow">← Previous</a>
+      <a href="#next" class="arrow">Next →</a>
+    </div>
+  </footer>
+
+  <script>
+    const editor = document.getElementById('journal-editor');
+    const preview = document.getElementById('markdown-preview');
+
+    function toggleNav() {
+      const nav = document.getElementById('navLinks');
+      nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function togglePreview() {
+      if (preview.style.display === 'block') {
+        preview.style.display = 'none';
+        editor.style.display = 'block';
+      } else {
+        const text = editor.value;
+        preview.innerHTML = renderMarkdown(text);
+        preview.style.display = 'block';
+        editor.style.display = 'none';
+      }
+    }
+
+    function renderMarkdown(md) {
+      return md
+        .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
+        .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
+        .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/\n$/gim, '<br>');
+    }
+
+    function exportMarkdown() {
+      const blob = new Blob([editor.value], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'nihil-notes.md';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Auto-save to localStorage every 3 minutes
+    setInterval(() => {
+      localStorage.setItem('nihilNotes', editor.value);
+    }, 180000); // 3 minutes
+
+    window.addEventListener('beforeunload', () => {
+      localStorage.setItem('nihilNotes', editor.value);
+    });
+
+    // Load saved notes on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('nihilNotes');
+      if (saved) editor.value = saved;
+    });
+  </script>
+</body>
+</html>

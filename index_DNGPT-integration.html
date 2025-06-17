@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Taking App with Markmap</title>
+    
+    <!-- External CSS libraries -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markmap-lib/dist/browser/markmap-lib.min.css">
+    
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Note Taking App with Markmap</title>
+    
+    <!-- External CSS libraries -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markmap-lib/dist/browser/markmap-lib.min.css">
+    
+    <!-- Custom CSS -->
+    <style>
+        /* Reset default margins and padding */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+
+        /* Main container layout */
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Editor section */
+        .editor-section {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Preview section */
+        .preview-section {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Form elements styling */
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        textarea {
+            height: 200px;
+            resize: vertical;
+        }
+
+        /* Button styling */
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* List styling */
+        .notes-list {
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+
+        .note-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .note-item:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Character count display */
+        .char-count {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+
+        /* Markmap container */
+        #markmap {
+            height: 400px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+    </style>
+
+    <!-- External JavaScript libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib/dist/browser/markmap-lib.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Editor Section -->
+        <div class="editor-section">
+            <h2>Note Editor</h2>
+            <input type="text" id="titleInput" placeholder="Note Title">
+            <input type="text" id="tagInput" placeholder="Tags (comma separated)">
+            <textarea id="noteInput" placeholder="Write your note here..."></textarea>
+            <div class="char-count">Characters: <span id="charCount">0</span></div>
+            
+            <div class="button-group">
+                <button id="saveButton">Save Note</button>
+                <button id="clearButton">Clear</button>
+                <button id="deleteButton">Delete</button>
+                <button id="togglePreviewButton">Toggle Preview</button>
+                <button id="exportButton">Export</button>
+            </div>
+
+            <div class="ai-section">
+                <select id="aiActionSelect">
+                    <option value="">Select AI Action...</option>
+                    <option value="summarize">Summarize</option>
+                    <option value="expand">Expand</option>
+                    <option value="correct">Grammar Check</option>
+                    <option value="custom">Custom Prompt</option>
+                </select>
+                <input type="text" id="customPromptInput" placeholder="Custom AI Prompt" style="display: none;">
+                <button id="performAIActionButton">Perform AI Action</button>
+            </div>
+
+            <div class="search-section">
+                <input type="text" id="searchInput" placeholder="Search notes...">
+            </div>
+
+            <div id="savedNotesList" class="notes-list">
+                <!-- Saved notes will be listed here -->
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <h2>Preview</h2>
+            <div id="preview"></div>
+            <div id="markmap"></div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script>
+        // Global variables
+        const notes = [];
+        let currentNoteIndex = -1;
+        let autoSaveTimer;
+        const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+
+        // DOM Elements
+        const noteInput = document.getElementById('noteInput');
+        const titleInput = document.getElementById('titleInput');
+        const tagInput = document.getElementById('tagInput');
+        const saveButton = document.getElementById('saveButton');
+        const clearButton = document.getElementById('clearButton');
+        const deleteButton = document.getElementById('deleteButton');
+        const savedNotesList = document.getElementById('savedNotesList');
+        const searchInput = document.getElementById('searchInput');
+        const preview = document.getElementById('preview');
+        const togglePreviewButton = document.getElementById('togglePreviewButton');
+        const exportButton = document.getElementById('exportButton');
+        const charCount = document.getElementById('charCount');
+        const aiActionSelect = document.getElementById('aiActionSelect');
+        const performAIActionButton = document.getElementById('performAIActionButton');
+        const customPromptInput = document.getElementById('customPromptInput');
+        const markmapDiv = document.getElementById('markmap');
+
+        // Initialize markmap
+        const { markmap } = window;
+        const mm = markmap.create(markmapDiv, {
+            duration: 500,
+            nodeFont: 'Arial',
+            nodeMinHeight: 16,
+        });
+
+        // Note functions
+        function saveNote() {
+            const title = titleInput.value.trim();
+            const content = noteInput.value.trim();
+            const tags = tagInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+            if (!title || !content) {
+                alert('Please enter both title and content');
+                return;
+            }
+
+            const note = {
+                title,
+                content,
+                tags,
+                timestamp: new Date().toISOString(),
+                id: currentNoteIndex >= 0 ? notes[currentNoteIndex].id : Date.now()
+            };
+
+            if (currentNoteIndex >= 0) {
+                notes[currentNoteIndex] = note;
+            } else {
+                notes.push(note);
+                currentNoteIndex = notes.length - 1;
+            }
+
+            saveToLocalStorage();
+            updateNotesList();
+            updatePreview();
+        }
+
+        function clearEditor() {
+            titleInput.value = '';
+            noteInput.value = '';
+            tagInput.value = '';
+            currentNoteIndex = -1;
+            updatePreview();
+            updateCharCount();
+        }
+
+        function deleteNote() {
+            if (currentNoteIndex >= 0) {
+                notes.splice(currentNoteIndex, 1);
+                saveToLocalStorage();
+                clearEditor();
+                updateNotesList();
+            }
+        }
+
+        function loadNote(index) {
+            const note = notes[index];
+            titleInput.value = note.title;
+            noteInput.value = note.content;
+            tagInput.value = note.tags.join(', ');
+            currentNoteIndex = index;
+            updatePreview();
+            updateCharCount();
+        }
+
+        // UI Update functions
+        function updateNotesList() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredNotes = notes.filter(note => 
+                note.title.toLowerCase().includes(searchTerm) ||
+                note.content.toLowerCase().includes(searchTerm) ||
+                note.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            );
+
+            savedNotesList.innerHTML = filteredNotes.map((note, index) => `
+                <div class="note-item" onclick="loadNote(${notes.indexOf(note)})">
+                    <strong>${note.title}</strong>
+                    <br>
+                    <small>${new Date(note.timestamp).toLocaleString()}</small>
+                    ${note.tags.length ? `<br><small>Tags: ${note.tags.join(', ')}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function updatePreview() {
+            const content = noteInput.value;
+            preview.innerHTML = content;
+            
+            // Update markmap
+            const markdown = `# ${titleInput.value}\n${content}`;
+            mm.setData(markmap.transform(markdown));
+        }
+
+        function updateCharCount() {
+            charCount.textContent = noteInput.value.length;
+        }
+
+        // Storage functions
+        function saveToLocalStorage() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        function loadFromLocalStorage() {
+            const savedNotes = localStorage.getItem('notes');
+            if (savedNotes) {
+                notes.push(...JSON.parse(savedNotes));
+                updateNotesList();
+            }
+        }
+
+        // Auto-save functionality
+        function setupAutoSave() {
+            if (autoSaveTimer) {
+                clearInterval(autoSaveTimer);
+            }
+            autoSaveTimer = setInterval(() => {
+                if (titleInput.value || noteInput.value) {
+                    saveNote();
+                }
+            }, AUTO_SAVE_INTERVAL);
+        }
+
+        // Event listeners
+        saveButton.addEventListener('click', saveNote);
+        clearButton.addEventListener('click', clearEditor);
+        deleteButton.addEventListener('click', deleteNote);
+        searchInput.addEventListener('input', updateNotesList);
+        noteInput.addEventListener('input', () => {
+            updatePreview();
+            updateCharCount();
+        });
+        titleInput.addEventListener('input', updatePreview);
+        togglePreviewButton.addEventListener('click', () => {
+            preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+        });
+        exportButton.addEventListener('click', () => {
+            const noteData = JSON.stringify(notes, null, 2);
+            const blob = new Blob([noteData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'notes-export.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        aiActionSelect.addEventListener('change', () => {
+            customPromptInput.style.display = 
+                aiActionSelect.value === 'custom' ? 'block' : 'none';
+        });
+        performAIActionButton.addEventListener('click', () => {
+            // Placeholder for AI functionality
+            alert('AI functionality coming soon!');
+        });
+
+        // Initialize the application
+        loadFromLocalStorage();
+        setupAutoSave();
+        updateCharCount();
+    </script>
+</body>
+</html>
+
+    <!-- External JavaScript libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markmap-lib/dist/browser/markmap-lib.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Editor Section -->
+        <div class="editor-section">
+            <h2>Note Editor</h2>
+            <input type="text" id="titleInput" placeholder="Note Title">
+            <input type="text" id="tagInput" placeholder="Tags (comma separated)">
+            <textarea id="noteInput" placeholder="Write your note here..."></textarea>
+            <div class="char-count">Characters: <span id="charCount">0</span></div>
+            
+            <div class="button-group">
+                <button id="saveButton">Save Note</button>
+                <button id="clearButton">Clear</button>
+                <button id="deleteButton">Delete</button>
+                <button id="togglePreviewButton">Toggle Preview</button>
+                <button id="exportButton">Export</button>
+            </div>
+
+            <div class="ai-section">
+                <select id="aiActionSelect">
+                    <option value="">Select AI Action...</option>
+                    <option value="summarize">Summarize</option>
+                    <option value="expand">Expand</option>
+                    <option value="correct">Grammar Check</option>
+                    <option value="custom">Custom Prompt</option>
+                </select>
+                <input type="text" id="customPromptInput" placeholder="Custom AI Prompt" style="display: none;">
+                <button id="performAIActionButton">Perform AI Action</button>
+            </div>
+
+            <div class="search-section">
+                <input type="text" id="searchInput" placeholder="Search notes...">
+            </div>
+
+            <div id="savedNotesList" class="notes-list">
+                <!-- Saved notes will be listed here -->
+            </div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section">
+            <h2>Preview</h2>
+            <div id="preview"></div>
+            <div id="markmap"></div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script>
+        // Global variables
+        const notes = [];
+        let currentNoteIndex = -1;
+        let autoSaveTimer;
+        const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
+
+        // DOM Elements
+        const noteInput = document.getElementById('noteInput');
+        const titleInput = document.getElementById('titleInput');
+        const tagInput = document.getElementById('tagInput');
+        const saveButton = document.getElementById('saveButton');
+        const clearButton = document.getElementById('clearButton');
+        const deleteButton = document.getElementById('deleteButton');
+        const savedNotesList = document.getElementById('savedNotesList');
+        const searchInput = document.getElementById('searchInput');
+        const preview = document.getElementById('preview');
+        const togglePreviewButton = document.getElementById('togglePreviewButton');
+        const exportButton = document.getElementById('exportButton');
+        const charCount = document.getElementById('charCount');
+        const aiActionSelect = document.getElementById('aiActionSelect');
+        const performAIActionButton = document.getElementById('performAIActionButton');
+        const customPromptInput = document.getElementById('customPromptInput');
+        const markmapDiv = document.getElementById('markmap');
+
+        // Initialize markmap
+        const { markmap } = window;
+        const mm = markmap.create(markmapDiv, {
+            duration: 500,
+            nodeFont: 'Arial',
+            nodeMinHeight: 16,
+        });
+
+        // Note functions
+        function saveNote() {
+            const title = titleInput.value.trim();
+            const content = noteInput.value.trim();
+            const tags = tagInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+
+            if (!title || !content) {
+                alert('Please enter both title and content');
+                return;
+            }
+
+            const note = {
+                title,
+                content,
+                tags,
+                timestamp: new Date().toISOString(),
+                id: currentNoteIndex >= 0 ? notes[currentNoteIndex].id : Date.now()
+            };
+
+            if (currentNoteIndex >= 0) {
+                notes[currentNoteIndex] = note;
+            } else {
+                notes.push(note);
+                currentNoteIndex = notes.length - 1;
+            }
+
+            saveToLocalStorage();
+            updateNotesList();
+            updatePreview();
+        }
+
+        function clearEditor() {
+            titleInput.value = '';
+            noteInput.value = '';
+            tagInput.value = '';
+            currentNoteIndex = -1;
+            updatePreview();
+            updateCharCount();
+        }
+
+        function deleteNote() {
+            if (currentNoteIndex >= 0) {
+                notes.splice(currentNoteIndex, 1);
+                saveToLocalStorage();
+                clearEditor();
+                updateNotesList();
+            }
+        }
+
+        function loadNote(index) {
+            const note = notes[index];
+            titleInput.value = note.title;
+            noteInput.value = note.content;
+            tagInput.value = note.tags.join(', ');
+            currentNoteIndex = index;
+            updatePreview();
+            updateCharCount();
+        }
+
+        // UI Update functions
+        function updateNotesList() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredNotes = notes.filter(note => 
+                note.title.toLowerCase().includes(searchTerm) ||
+                note.content.toLowerCase().includes(searchTerm) ||
+                note.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+            );
+
+            savedNotesList.innerHTML = filteredNotes.map((note, index) => `
+                <div class="note-item" onclick="loadNote(${notes.indexOf(note)})">
+                    <strong>${note.title}</strong>
+                    <br>
+                    <small>${new Date(note.timestamp).toLocaleString()}</small>
+                    ${note.tags.length ? `<br><small>Tags: ${note.tags.join(', ')}</small>` : ''}
+                </div>
+            `).join('');
+        }
+
+        function updatePreview() {
+            const content = noteInput.value;
+            preview.innerHTML = content;
+            
+            // Update markmap
+            const markdown = `# ${titleInput.value}\n${content}`;
+            mm.setData(markmap.transform(markdown));
+        }
+
+        function updateCharCount() {
+            charCount.textContent = noteInput.value.length;
+        }
+
+        // Storage functions
+        function saveToLocalStorage() {
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+
+        function loadFromLocalStorage() {
+            const savedNotes = localStorage.getItem('notes');
+            if (savedNotes) {
+                notes.push(...JSON.parse(savedNotes));
+                updateNotesList();
+            }
+        }
+
+        // Auto-save functionality
+        function setupAutoSave() {
+            if (autoSaveTimer) {
+                clearInterval(autoSaveTimer);
+            }
+            autoSaveTimer = setInterval(() => {
+                if (titleInput.value || noteInput.value) {
+                    saveNote();
+                }
+            }, AUTO_SAVE_INTERVAL);
+        }
+
+        // Event listeners
+        saveButton.addEventListener('click', saveNote);
+        clearButton.addEventListener('click', clearEditor);
+        deleteButton.addEventListener('click', deleteNote);
+        searchInput.addEventListener('input', updateNotesList);
+        noteInput.addEventListener('input', () => {
+            updatePreview();
+            updateCharCount();
+        });
+        titleInput.addEventListener('input', updatePreview);
+        togglePreviewButton.addEventListener('click', () => {
+            preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+        });
+        exportButton.addEventListener('click', () => {
+            const noteData = JSON.stringify(notes, null, 2);
+            const blob = new Blob([noteData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'notes-export.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        aiActionSelect.addEventListener('change', () => {
+            customPromptInput.style.display = 
+                aiActionSelect.value === 'custom' ? 'block' : 'none';
+        });
+        performAIActionButton.addEventListener('click', () => {
+            // Placeholder for AI functionality
+            alert('AI functionality coming soon!');
+        });
+
+        // Initialize the application
+        loadFromLocalStorage();
+        setupAutoSave();
+        updateCharCount();
+    </script>
+</body>
+</html>
