@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nihiltheism Research Platform v2.1</title>
+    
+    <script>
+        // Marked.js v4.0.12 - For Markdown Parsing
+        !function(e){"use strict";var t={gfm:!0,breaks:!1,pedantic:!1,sanitize:!1,smartLists:!0,smartypants:!1,xhtml:!1};var n=function(){function e(e){this.tokens=e,this.tokens.links=Object.create(null),this.options=e.options,this.renderer=this.options.renderer||new r,this.renderer.options=this.options}return e.parse=function(t,n){var s=new e(n);return s.parse(t)},e.prototype.parse=function(e){for(var t=this,n="",s=e.length,r=0;r<s;r++){var i=e[r];switch(i.type){case"space":continue;case"hr":n+=t.renderer.hr();continue;case"heading":n+=t.renderer.heading(t.parseInline(i.tokens),i.depth,i.text);continue;case"code":n+=t.renderer.code(i.text,i.lang,i.escaped);continue;case"table":for(var o="",l="",a=i.header.length,h=0;h<a;h++)o+=t.renderer.tablecell(t.parseInline(i.header[h].tokens),{header:!0,align:i.align[h]});for(n+=t.renderer.tableheader(o),a=i.cells.length,h=0;h<a;h++){for(var p="",c=i.cells[h].length,u=0;u<c;u++)p+=t.renderer.tablecell(t.parseInline(i.cells[h][u].tokens),{header:!1,align:i.align[u]});l+=t.renderer.tablerow(p)}n+=t.renderer.table(l);continue;case"blockquote_start":for(l="";"blockquote_end"!==e[++r].type;)l+=t.parse([e[r]]);n+=t.renderer.blockquote(l);continue;case"list_start":for(l="",o=i.ordered,a=i.start;"list_end"!==e[++r].type;)l+=t.parse([e[r]]);n+=t.renderer.list(l,o,a);continue;case"list_item_start":for(l="",o=i.loose;"list_item_end"!==e[++r].type;)l+=o||"text"!==e[r].type?t.parse([e[r]]):t.parseInline(e[r].tokens);n+=t.renderer.listitem(l,i.task,i.checked);continue;case"loose_item_start":for(l="";"list_item_end"!==e[++r].type;)l+=t.parse([e[r]]);n+=t.renderer.listitem(l,i.task,i.checked);continue;case"html":n+=t.renderer.html(i.text);continue;case"paragraph":n+=t.renderer.paragraph(t.parseInline(i.tokens));continue;case"text":n+=t.renderer.paragraph(t.parseInline([i]));continue}}return n},e.prototype.parseInline=function(e){for(var t=this,n="",s=e.length,r=0;r<s;r++){var i=e[r];switch(i.type){case"escape":n+=i.text;continue;case"html":n+=t.renderer.html(i.text);continue;case"link":n+=t.renderer.link(i.href,i.title,t.parseInline(i.tokens));continue;case"image":n+=t.renderer.image(i.href,i.title,i.text);continue;case"strong":n+=t.renderer.strong(t.parseInline(i.tokens));continue;case"em":n+=t.renderer.em(t.parseInline(i.tokens));continue;case"codespan":n+=t.renderer.codespan(i.text);continue;case"br":n+=t.renderer.br();continue;case"del":n+=t.renderer.del(t.parseInline(i.tokens));continue;case"text":n+=t.renderer.text(i.text);continue}}return n},e}();var s=function(){function e(){}return e.exec=function(){return null},e}();var r=function(){function e(e){this.options=e||t}return e.prototype.code=function(e,t,n){if(this.options.highlight){var s=this.options.highlight(e,t);null!=s&&s!==e&&(n=!0,e=s)}return t?'<pre><code class="language-'+this.options.langPrefix+c(t,!0)+'">'+(n?e:c(e,!0))+"</code></pre>\n":'<pre><code>'+(n?e:c(e,!0))+"</code></pre>\n"},e.prototype.blockquote=function(e){return"<blockquote>\n"+e+"</blockquote>\n"},e.prototype.html=function(e){return e},e.prototype.heading=function(e,t,n){var s=this.options.headerIds?this.options.headerPrefix+n.toLowerCase().replace(/[^\w]+/g,"-"):"";return"<h"+t+' id="'+s+'">'+e+"</h"+t+">\n"},e.prototype.hr=function(){return this.options.xhtml?"<hr/>\n":"<hr>\n"},e.prototype.list=function(e,t,n){var s=t?"ol":"ul",r=t&&1!==n?' start="'+n+'"':"";return"<"+s+r+">\n"+e+"</"+s+">\n"},e.prototype.listitem=function(e,t,n){var s="";return t&&(s='<input '+(n?"checked ":"")+'disabled type="checkbox"> '),"<li"+(t?' class="task-list-item"':"")+">"+s+e+"</li>\n"},e.prototype.paragraph=function(e){return"<p>"+e+"</p>\n"},e.prototype.table=function(e,t){return"<table>\n<thead>\n"+e+"</thead>\n"+(t?"<tbody>"+t+"</tbody>":"")+"</table>\n"},e.prototype.tablerow=function(e){return"<tr>\n"+e+"</tr>\n"},e.prototype.tablecell=function(e,t){var n=t.header?"th":"td";return(t.align?"<"+n+' align="'+t.align+'">':"<"+n+">")+e+"</"+n+">\n"},e.prototype.strong=function(e){return"<strong>"+e+"</strong>"},e.prototype.em=function(e){return"<em>"+e+"</em>"},e.prototype.codespan=function(e){return"<code>"+e+"</code>"},e.prototype.br=function(){return this.options.xhtml?"<br/>":"<br>"},e.prototype.del=function(e){return"<del>"+e+"</del>"},e.prototype.link=function(e,t,n){if(this.options.sanitize){try{var r=decodeURIComponent(p(e)).replace(/[^\w:]/g,"").toLowerCase()}catch(e){return n}if(0===r.indexOf("javascript:")||0===r.indexOf("vbscript:")||0===r.indexOf("data:"))return n}var i='<a href="'+e+'"';return t&&(i+=' title="'+t+'"'),i+=">"+n+"</a>",i},e.prototype.image=function(e,t,n){var s='<img src="'+e+'" alt="'+n+'"';return t&&(s+=' title="'+t+'"'),s+=this.options.xhtml?"/>":">",s},e.prototype.text=function(e){return e},e}();var i=function(){function e(t){this.rules=o.normal,this.options=this.options||e.defaults,this.options.gfm&&(this.rules=this.options.breaks?o.breaks:o.gfm),this.options.pedantic&&(this.rules=o.pedantic)}return e.defaults={gfm:!0,breaks:!1,pedantic:!1,sanitize:!1,smartLists:!0,smartypants:!1,xhtml:!1,langPrefix:"language-",headerPrefix:"",headerIds:!0,renderer:new r},e.lex=function(t,n){var s=new e(n);return s.lex(t)},e.prototype.lex=function(e){return e=e.replace(/\r\n|\r/g,"\n").replace(/\t/g,"    ").replace(/\u00a0/g," ").replace(/\u2424/g,"\n"),new a(e,this.options).getTokens()},e}();var o=function(e){function n(e,t){return e=e.source,t=t||"",function n(s,r){return s?(r=r.source||r,e=e.replace(s,r),n):new RegExp(e,t)}}var r={newline:/^\n+/,code:/^( {4}[^\n]+\n*)+/,fences:s,hr:/^ {0,3}((?:- *){3,}|(?:_ *){3,}|(?: *){3,})(?:\n+|$)/,heading:/^ *(#{1,6}) *([^\n]+?) *#* *(?:\n+|$)/,nptable:s,blockquote:/^( {0,3}>[^\n]*(?:\n(?! {0,3}((?:- *){3,}|(?:_ *){3,}|(?: *){3,})(?:\n+|$)| {0,3}#{1,6} | {0,3}>| {0,3}(?:[1-9]\d*|[u*+-]) |`{3,}(?=[^`\n]*\n)| {0,3}```| {0,3} {4})[^\n]+)*)(?:\n+|$)/,list:/^( {0,3})([u*+-]|\d{1,9}\.)[ \t]+((?:[^\n]|\n(?! {0,3}(?:[u*+-]|\d+\.)[ \t]+))*)?(?:\n+|$)/,html:/^ {0,3}(?:<(script|pre|style)[^>]*>[\s\S]*?<\/\1>||<!\[CDATA\[[\s\S]*?\]\]>|<!\?[\s\S]*?\?>|<\/?\w+(?: +|\n|\/?>)[^>]*>)(?:\n{2,}|$)/,def:/^ {0,3}\[([^\]]+)\]: *<?([^\s>]+)>?(?: +["(]([^\n]+)[")])? *(?:\n+|$)/,table:s,lheading:/^([^\n]+)\n *(=|-){2,} *(?:\n+|$)/,paragraph:/^([^\n]+(?:\n(?! {0,3}((?:- *){3,}|(?:_ *){3,}|(?: *){3,})(?:\n+|$)| {0,3}#{1,6} | {0,3}>| {0,3}(?:[1-9]\d*|[u*+-]) |`{3,}(?=[^`\n]*\n)| {0,3}```| {0,3} {4})[^\n]+)*)/,text:/^[^\n]+/};r.bullet=/(?:[u*+-]|\d{1,9}\.)/,r.item=n(/^( *)(bull) [^\n]*(?:\n(?!\1bull )[^\n]*)*/,t)("bull",r.bullet),r.list=n(r.list,t)("bull",r.bullet,!1,/((?:[^\n]|\n(?! {0,3}(?:[u*+-]|\d+\.)[ \t]+))*)?/,/( {0,3})([u*+-]|\d{1,9}\.)[ \t]+/),r.html=n(r.html,t)("comment",//).replace("isti",/\b(?!<pre>|<script>|<style>||^<\/?\w+(?: +|\n|\/?>)[^>]*>/,link:/^!?\[(inside)\]\(href\)/,reflink:/^!?\[(inside)\]\s*\[([^\]]*)\]/,nolink:/^!?\[((?:\[[^\]]*\]|[^\[\]])*)\]/,strong:/^__(?=\S)([\s\S]*?\S)__|^_([\s\S]*?)_|\*\*(?=\S)([\s\S]*?\S)\*\*|^\*([\s\S]*?)\*/,em:/^_([^\s_])(?:[\s\S]*?\1)?_|\*([^\s*])(?:[\s\S]*?\2)?\*/,code:/^`(?=\S)([\s\S]*?\S)`/,br:/^ {2,}\n(?!\s*$)/,del:s,text:/^[\s\S]+?(?=[\\<!\[_*`]| {2,}\n|$)/};i._inside=/(?:\[[^\]]*\]|[^\[\]]|\](?=[^\[]*\]))*/,i._href=/\s*<?([\s\S]*?)>?(?:\s+['"]([\s\S]*?)['"])?\s*/,i.link=n(i.link,t)("inside",i._inside)("href",i._href),i.reflink=n(i.reflink,t)("inside",i._inside),i.normal={...r,...i},r.pedantic=Object.assign({},r.normal,{html:n(/^ *(?:|<!\[CDATA\[[\s\S]*?\]\]>|<\/?\w+(?: +|\n|\/?>)[^>]*>)(?:\n{2,}|$)/,t)("comment",//).replace("tag","<(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\b)\w+(?: +|\n|\/?>)[^>]*>"),def:/^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(])([^\n]+)\3)? *(?:\n+|$)/}),i.pedantic=Object.assign({},i.normal,{strong:/^__(?=\S)([\s\S]*?\S)__|\*\*(?=\S)([\s\S]*?\S)\*\*/,em:/^_([^\s_])([\s\S]*?[^\s_])_|\*([^\s*])([\s\S]*?[^\s*])\*/,link:n(/^!?\[(inside)\]\(href\)/,t)("inside",/[^\]]+/)("href",i._href),reflink:n(/^!?\[(inside)\]\s*\[([^\]]*)\]/,t)("inside",/[^\]]+/)("reflink",/\[\s*([^\]]+?)\s*\]/)}),r.gfm=Object.assign({},r.normal,{fences:/^ *(`{3,}|~{3,})[ \.]*(\S+)? *\n([\s\S]*?)\n? *\1 *(?:\n+|$)/,paragraph:n(r.paragraph,t)("fences",/^ {0,3}(`{3,}|~{3,})[ \.]*(\S+)? *\n/),list:n(r.list,t)("task",/^\[([x ])\] /)},"bull",r.bullet),r.gfm.nptable=/^ *([^|\n ].*\|.*)\n *([-:]+ *\| *[-| :]*)\n((?:.*\|.*(?:\n|$))*)\n*/,r.gfm.table=/^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/,i.gfm=Object.assign({},i.normal,{del:/^~(?=\S)([\s\S]*?\S)~/}),i.breaks=Object.assign({},i.gfm,{br:n(i.br,t)("{2,}",/ */),text:n(i.text,t)("(?=[\\\\<!\[`*~]| {2,}\n)","|(?=\\n)")});var o={normal:r,pedantic:r.pedantic,gfm:r.gfm,breaks:r.breaks},l={normal:i,pedantic:i.pedantic,gfm:i.gfm,breaks:i.breaks};return e.rules=o,e.inline=l,e}({});var l={};function a(e,t){this.tokens=[],this.token=null,this.options=t||i.defaults,this.options.renderer=this.options.renderer||new r,this.renderer=this.options.renderer,this.renderer.options=this.options,this.slugger=new h,this.rules=o.normal,this.options.gfm&&(this.rules=o.gfm),this.options.pedantic&&(this.rules=o.pedantic),this.options.breaks&&(this.rules=o.breaks),this.src=e}function h(){this.seen=Object.create(null)}a.prototype.getTokens=function(){return this.lex(this.src),this.tokens},a.prototype.lex=function(e){for(e=e.replace(/\r\n|\r/g,"\n");e;){var t;if(t=this.rules.newline.exec(e))e=e.substring(t[0].length),t[0].length>1&&this.tokens.push({type:"space"});else if(t=this.rules.code.exec(e))e=e.substring(t[0].length),t=t[0].replace(/^ {4}/gm,""),this.tokens.push({type:"code",text:this.options.pedantic?t:t.replace(/\n+$/,"")});else if(t=this.rules.fences.exec(e))e=e.substring(t[0].length),this.tokens.push({type:"code",lang:t[2],text:t[3]||""});else if(t=this.rules.heading.exec(e))e=e.substring(t[0].length),this.tokens.push({type:"heading",depth:t[1].length,text:t[2]});else if(t=this.rules.nptable.exec(e)){var n={type:"table",header:t[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:t[2].replace(/^ *| *\| *$/g,"").split(/ *\| */),cells:t[3]?t[3].replace(/\n$/,"").split("\n"):[]};n.header.length===n.align.length?(e=e.substring(t[0].length),n.cells=n.cells.map(function(e){return e.split(/ *\| */)}),this.tokens.push(n)):this.rules.lheading.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"heading",depth:1==="="?1:2,text:t[1]})):this.rules.hr.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"hr"})):this.rules.blockquote.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"blockquote_start"}),t=t[0].replace(/^ *> ?/gm,""),this.lex(t),this.tokens.push({type:"blockquote_end"})):this.rules.list.exec(e)?(e=e.substring(t[0].length),n={type:"list_start",ordered:t[2].length>1,start:t[2].length>1?+t[2]:"",loose:!1},this.tokens.push(n),t=t[0].match(this.rules.item),function(e,t,n){for(var s=e.length,r=0;r<s;r++){var i=e[r],o=i.match(/^ *(\[([x ])\] ?)/),l=void 0;l=t||o?!!o&&" "!==o[2]:i.search(/\n *\n/)!==-1&&i.search(a.bullet)<i.length-1,n=n||l,a.tokens.push({type:l?"loose_item_start":"list_item_start",task:!!o,checked:!(!o||" "!==o[2])}),a.lex(i.replace(/^ *([u*+-]|\d+\.) */,"").replace(/^ *(\[([x ])\] ?)/,"")),a.tokens.push({type:"list_item_end"})}n&&(a.tokens[a.tokens.indexOf(a)].loose=!0)}(t,n.loose,n.loose),n.loose&&(a.tokens[a.tokens.indexOf(n)].loose=!0),this.tokens.push({type:"list_end"})):this.rules.html.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"html",pre:"pre"===t[1]||"script"===t[1]||"style"===t[1],text:t[0]})):this.rules.def.exec(e)?(e=e.substring(t[0].length),t[3]&&(t[3]=t[3].substring(1,t[3].length-1)),n=t[1].toLowerCase().replace(/\s+/g," "),Object.prototype.hasOwnProperty.call(this.tokens.links,n)||this.tokens.links[n]||(this.tokens.links[n]={href:t[2],title:t[3]})):this.rules.table.exec(e)?(n={type:"table",header:t[1].replace(/^ *| *\| *$/g,"").split(/ *\| */),align:t[2].replace(/^ *| *\| *$/g,"").split(/ *\| */),cells:t[3]?t[3].replace(/(?: *\| *)?\n$/,"").split("\n"):[]},n.header.length===n.align.length?(e=e.substring(t[0].length),n.cells=n.cells.map(function(e){return e.replace(/^ *\| *| *\| *$/g,"").split(/ *\| */)}),this.tokens.push(n)):this.rules.lheading.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"heading",depth:1==="="?1:2,text:t[1]})):this.rules.paragraph.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"paragraph",text:t[1].charAt(t[1].length-1)==="\n"?t[1].slice(0,-1):t[1]})):this.rules.text.exec(e)?(e=e.substring(t[0].length),this.tokens.push({type:"text",text:t[0]})):e&&(console.error("Infinite loop on byte: "+e.charCodeAt(0)),e="")}return this},h.prototype.slug=function(e,t){var n=e.toLowerCase().trim().replace(/[\u2000-\u206F\u2E00-\u2E7F\\'!"#$%&()*+,./:;<=>?@[\]^`{|}~]/g,"").replace(/\s/g,"-");if(Object.prototype.hasOwnProperty.call(this.seen,n)){var s=n;do{t++,n=s+"-"+t}while(Object.prototype.hasOwnProperty.call(this.seen,n))}return this.seen[n]=!0,n};var p=function(){function e(e){this.options=e||i.defaults,this.options.renderer=this.options.renderer||new r,this.renderer=this.options.renderer,this.renderer.options=this.options,this.rules=o.inline.normal,this.options.gfm&&(this.rules=this.options.pedantic?o.inline.pedantic:o.inline.gfm),this.options.breaks&&(this.rules=o.inline.breaks)}return e.output=function(t,n,s){var r=new e(s);return r.output(t,n)},e.prototype.output=function(e,t){for(var n=this,s="",r=e;r;){var i;if(i=this.rules.escape.exec(r))r=r.substring(i[0].length),s+=i[1];else if(i=this.rules.autolink.exec(r))r=r.substring(i[0].length),s+="@"===i[2]?n.renderer.link("mailto:"+i[1],null,i[1]):n.renderer.link(i[1],null,i[1]);else if(this.options.smartLinks&&this.rules.url.exec(r));else if(i=this.rules.tag.exec(r))!this.options.sanitize&&!this.options.sanitizer||(i[0]=this.options.sanitizer?this.options.sanitizer(i[0]):c(i[0])),r=r.substring(i[0].length),s+=i[0];else if(i=this.rules.link.exec(r))r=r.substring(i[0].length),this.inLink=!0,s+=n.outputLink(i,{href:i[2],title:i[3]}),this.inLink=!1;else if((i=this.rules.reflink.exec(r))||(i=this.rules.nolink.exec(r))){if(r=r.substring(i[0].length),i=i[0].replace(/^!/,""),n=t[i[1].toLowerCase()])i[2]&&(n.title=i[2]),s+=this.outputLink(i,n);else s+=i[0]}else if(i=this.rules.strong.exec(r))r=r.substring(i[0].length),s+=n.renderer.strong(n.output(i[2]||i[1]));else if(i=this.rules.em.exec(r))r=r.substring(i[0].length),s+=n.renderer.em(n.output(i[2]||i[1]));else if(i=this.rules.code.exec(r))r=r.substring(i[0].length),s+=n.renderer.codespan(c(i[2].trim(),!0));else if(i=this.rules.br.exec(r))r=r.substring(i[0].length),s+=n.renderer.br();else if(i=this.rules.del.exec(r))r=r.substring(i[0].length),s+=n.renderer.del(n.output(i[1]));else if(i=this.rules.text.exec(r))r=r.substring(i[0].length),s+=n.renderer.text(c(n.smartypants(i[0])));else r&&(console.error("Infinite loop on byte: "+r.charCodeAt(0)),r="")}return s},e.prototype.outputLink=function(e,t){var n=t.href,s=t.title?c(t.title):null;return"!"!==e[0].charAt(0)?this.renderer.link(n,s,this.output(e[1])):this.renderer.image(n,s,c(e[1]))},e.prototype.smartypants=function(e){return this.options.smartypants?e.replace(/---/g,"—").replace(/--/g,"–").replace(/(^|[-\u2014/(\[{"\s])'/g,"$1‘").replace(/'/g,"’").replace(/(^|[-\u2014/(\[{\u2018\s])"/g,"$1“").replace(/"/g,"”").replace(/\.{3}/g,"…"):e},e}();function c(e,t){return e=e.replace(t?/&/g:/&(?!#?\w+;)/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"),e}function u(e){return e.replace(/&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));/gi,function(e,t){return"colon"===(t=t.toLowerCase())?":":"#"===t.charAt(0)?"x"===t.charAt(1)?String.fromCharCode(parseInt(t.substring(2),16)):String.fromCharCode(+t.substring(1)):""})}e.marked=function(e,s,a){if("function"==typeof s){a=s,s=null}s=Object.assign({},t,s);try{var h={type:"root",tokens:i.lex(e,s)};s.walkTokens&&s.walkTokens(h),n.parse(h,s)}catch(e){if(a)return a(e)}return n.parse(h,s)}}("object"==typeof exports?exports:window);
+    </script>
+    <script>
+        // KaTeX v0.16.0 - For LaTeX Rendering
+        // This is a placeholder. For a real application, you would include the full KaTeX library here.
+        // A full version is too large to embed reasonably. This is a minimal mock.
+        window.katex = {
+            renderToString: function(expression, options) {
+                const isBlock = options && options.displayMode;
+                const style = `display:${isBlock ? 'block' : 'inline-block'}; padding: ${isBlock ? '1em' : '0.1em'}; border: 1px solid #444; border-radius: 4px; font-family: 'Times New Roman', serif; background: rgba(0,0,0,0.2); color: #4ecdc4;`;
+                const safeExpression = expression.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<span style="${style}">${safeExpression}</span>`;
+            }
+        };
+    </script>
+    <script>
+        // Vis.js (Network) v9.1.2 - For Knowledge Graph
+        // This is a placeholder. The full library is required for the graph to be interactive.
+        // A full version is too large to embed. This provides a non-functional placeholder.
+        window.vis = {
+            Network: class {
+                constructor(container, data, options) {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding: 2em; color: #a8a8a8;">
+                            <p><strong>Knowledge Graph Preview</strong></p>
+                            <p>Full vis.js library needed for interactive graph.</p>
+                            <p>${data.nodes.length} nodes and ${data.edges.length} edges found.</p>
+                        </div>
+                    `;
+                }
+                on() {} // Mock event listener
+            }
+        };
+    </script>
+
+    <style>
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --background-color: #1a1a2e;
+            --text-color: #e8e8e8;
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 107, 107, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Georgia', serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .app-container { display: flex; height: 100vh; }
+        .sidebar { width: 300px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); border-right: 1px solid var(--border-color); padding: 20px; overflow-y: auto; transition: all 0.3s ease; position: relative; }
+        .sidebar.collapsed { width: 70px; }
+        .sidebar-toggle { position: absolute; top: 15px; right: 15px; background: rgba(255, 107, 107, 0.2); border: none; color: var(--primary-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; z-index: 10; }
+        .sidebar-toggle:hover { background: rgba(255, 107, 107, 0.3); transform: scale(1.05); }
+        .nav-section { margin-bottom: 25px; }
+        .nav-title { color: var(--primary-color); font-size: 0.9rem; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 1; transition: opacity 0.3s ease; }
+        .sidebar.collapsed .nav-title { opacity: 0; }
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; margin-bottom: 6px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; color: #b8b8b8; position: relative; }
+        .nav-item:hover, .nav-item.active { background: rgba(255, 107, 107, 0.15); color: var(--primary-color); transform: translateX(5px); box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2); }
+        .nav-icon { width: 20px; height: 20px; margin-right: 12px; opacity: 0.8; font-size: 16px; }
+        .nav-text { opacity: 1; transition: opacity 0.3s ease; }
+        .sidebar.collapsed .nav-text { opacity: 0; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header-bar { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .header-title { color: var(--primary-color); font-size: 1.6rem; font-weight: 300; letter-spacing: 2px; }
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+        .search-bar { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 25px; padding: 10px 22px; color: var(--text-color); width: 320px; outline: none; transition: all 0.3s ease; font-size: 0.95rem; }
+        .search-bar:focus { border-color: var(--secondary-color); box-shadow: 0 0 15px rgba(78, 205, 196, 0.3); width: 360px; }
+        .content-area { flex: 1; padding: 30px; overflow-y: auto; }
+        .panel { background: var(--panel-bg); border-radius: 15px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); transition: all 0.3s ease; position: relative; overflow: hidden; margin-bottom: 25px; }
+        .panel.full-width { grid-column: 1 / -1; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border-color); }
+        .panel-title { color: var(--primary-color); font-size: 1.4rem; font-weight: 400; }
+        .panel-controls { display: flex; gap: 12px; align-items: center; }
+        .btn { background: linear-gradient(135deg, #ff6b6b, #4ecdc4); color: white; border: none; padding: 10px 18px; border-radius: 25px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease; font-weight: 500; }
+        .btn:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: #b8b8b8; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); color: #e8e8e8; box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1); }
+        .btn-small { padding: 6px 12px; font-size: 0.8rem; }
+        .affirmation-display { background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(78, 205, 196, 0.2) 100%); padding: 30px; border-radius: 15px; text-align: center; font-size: 1.2rem; font-style: italic; border: 2px solid rgba(255, 107, 107, 0.3); line-height: 1.7; }
+        .catalyst-address { background: rgba(0, 0, 0, 0.3); padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .catalyst-address strong { color: var(--primary-color); }
+        .catalyst-vectors, .notes-container { display: flex; flex-direction: column; gap: 18px; }
+        .vector-item, .note-item { background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px; transition: all 0.3s ease; }
+        .note-item { border-left: 4px solid #ffa726; cursor: pointer; }
+        .note-item:hover { background: rgba(0, 0, 0, 0.3); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); }
+        .note-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .note-title { color: #ffa726; font-weight: bold; font-size: 1.1rem; }
+        .note-date { color: #a8a8a8; font-size: 0.85rem; }
+        .note-tags { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .tag { background: rgba(255, 167, 38, 0.2); color: #ffa726; padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; border: 1px solid rgba(255, 167, 38, 0.3); }
+        .note-content, .note-content-full { color: #d8d8d8; line-height: 1.7; }
+        .note-content-full h1, .note-content-full h2, .note-content-full h3 { color: var(--secondary-color); margin-top: 1.5em; margin-bottom: 0.5em; border-bottom: 1px solid rgba(78, 205, 196, 0.2); padding-bottom: 0.3em; }
+        .note-content-full p { margin-bottom: 1em; }
+        .note-content-full a.internal-link { color: var(--primary-color); text-decoration: none; border-bottom: 1px dashed var(--primary-color); transition: all 0.2s ease; }
+        .note-content-full a.internal-link:hover { background-color: rgba(255, 107, 107, 0.1); border-bottom-style: solid; }
+        .note-content-full blockquote { border-left: 3px solid var(--secondary-color); margin-left: 1em; padding-left: 1em; color: #ccc; font-style: italic; }
+        .backlinks-container { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .backlinks-title { color: var(--secondary-color); margin-bottom: 15px; }
+        .backlinks-list { list-style: none; padding-left: 0; }
+        .backlinks-item a { color: var(--primary-color); }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: rgba(26, 26, 46, 0.95); border-radius: 20px; padding: 35px; max-width: 750px; width: 90%; border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); transform: scale(0.9); transition: transform 0.3s ease; }
+        .modal.active .modal-content { transform: scale(1); }
+        .modal-header { color: var(--primary-color); font-size: 1.5rem; margin-bottom: 25px; text-align: center; }
+        .form-group { margin-bottom: 22px; }
+        .form-label { display: block; color: var(--secondary-color); margin-bottom: 8px; font-weight: bold; }
+        .form-input, .form-textarea { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; color: var(--text-color); outline: none; transition: all 0.3s ease; font-size: 1rem; font-family: 'Georgia', serif; }
+        .form-textarea { resize: vertical; min-height: 200px; line-height: 1.6; }
+        .form-input:focus, .form-textarea:focus { border-color: var(--secondary-color); box-shadow: 0 0 15px rgba(78, 205, 196, 0.3); }
+        .modal-actions { display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px; }
+        .floating-action { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: linear-gradient(135deg, #ff6b6b, #4ecdc4); border: none; border-radius: 50%; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4); transition: all 0.3s ease; z-index: 100; }
+        .floating-action:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 6px 30px rgba(255, 107, 107, 0.6); }
+        .empty-state { text-align: center; color: #a8a8a8; font-style: italic; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 12px; border: 2px dashed rgba(255, 255, 255, 0.1); }
+    </style>
+
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            <div class="nav-section">
+                <div class="nav-title">Dashboard</div>
+                <div class="nav-item active" data-section="dashboard"><span class="nav-icon">📊</span><span class="nav-text">Overview</span></div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">Knowledge Base</div>
+                <div class="nav-item" data-section="notes"><span class="nav-icon">📝</span><span class="nav-text">Notes</span></div>
+                <div class="nav-item" data-section="graph"><span class="nav-icon">🔗</span><span class="nav-text">Knowledge Graph</span></div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">Tools & Analysis</div>
+                <div class="nav-item" data-section="catalyst"><span class="nav-icon">🎯</span><span class="nav-text">Daily Catalyst</span></div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="header-bar">
+                <div class="header-title" id="headerTitle">Nihiltheism Research Platform</div>
+                <div class="header-controls">
+                    <input type="text" class="search-bar" placeholder="Search across all knowledge..." id="globalSearch">
+                    <button class="btn" id="addButton">+ Add Note</button>
+                </div>
+            </div>
+            <div class="content-area" id="contentArea"></div>
+        </div>
+    </div>
+    
+    <button class="floating-action" id="quickAddButton" title="Quick Add Note">+</button>
+    
+    <div class="modal" id="formModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle"></div>
+            <div id="modalFormContent"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelButton">Cancel</button>
+                <button class="btn" id="saveButton">💾 Save Item</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // --- 1. STATE MANAGEMENT ---
+        const state = {
+            notes: [],
+            currentSection: 'dashboard',
+        };
+
+        // --- 2. UTILITIES ---
+        function generateUUID() {
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+        }
+        function formatDate(date) {
+            return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        function parseContent(text = '') {
+            let processedText = text.replace(/\[\[(.*?)\]\]/g, `<a href="#" class="internal-link" data-link-title="$1">$1</a>`);
+            processedText = processedText.replace(/\$\$(.*?)\$\$/g, (match, expr) => window.katex.renderToString(expr, { displayMode: true, throwOnError: false }));
+            processedText = processedText.replace(/\$(.*?)\$/g, (match, expr) => window.katex.renderToString(expr, { throwOnError: false }));
+            return window.marked.parse(processedText);
+        }
+
+        // --- 3. DATABASE (localStorage) ---
+        const DB_KEY = 'nihiltheism_pkm_data_v2';
+        const getSampleData = () => ({
+            notes: [
+                { id: generateUUID(), title: 'Welcome to Your PKM', content: `This is your new **Personal Knowledge Management** system.\n- Use Markdown for formatting.\n- Render LaTeX for philosophy: $E=mc^2$ or $\\forall x (\\Phi(x) \\rightarrow \\Psi(x))$.\n- Link to other notes like this: [[Ontodicy Collapse Argument]]`, tags: ['welcome'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+                { id: generateUUID(), title: 'Ontodicy Collapse Argument', content: 'The core argument posits that any attempt to justify Being itself (an ontodicy) inevitably collapses.', tags: ['nihiltheism', 'core-concept'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+            ]
+        });
+        function loadData() {
+            const data = localStorage.getItem(DB_KEY);
+            Object.assign(state, data ? JSON.parse(data) : getSampleData());
+            saveData();
+        }
+        function saveData() {
+            localStorage.setItem(DB_KEY, JSON.stringify({ notes: state.notes }));
+        }
+        function addItem(type, itemData) {
+            const newItem = { id: generateUUID(), createdAt: new Date().toISOString(), ...itemData, updatedAt: new Date().toISOString() };
+            state[`${type}s`].push(newItem);
+            saveData();
+        }
+        function updateItem(type, id, updates) {
+            const collection = state[`${type}s`];
+            const itemIndex = collection.findIndex(item => item.id === id);
+            if (itemIndex > -1) {
+                collection[itemIndex] = { ...collection[itemIndex], ...updates, updatedAt: new Date().toISOString() };
+                saveData();
+            }
+        }
+        function deleteItem(type, id) {
+            state[`${type}s`] = state[`${type}s`].filter(item => item.id !== id);
+            saveData();
+        }
+
+        // --- 4. UI COMPONENTS ---
+        function createElement(tag, classes, content) {
+            const el = document.createElement(tag);
+            if (classes) el.className = Array.isArray(classes) ? classes.join(' ') : classes;
+            if (content) el.innerHTML = typeof content === 'string' ? content : '';
+            if (content instanceof Node) el.appendChild(content);
+            return el;
+        }
+        function createNoteItem(note) {
+            const noteItem = createElement('div', 'note-item');
+            noteItem.dataset.id = note.id;
+            const previewText = note.content.substring(0, 150) + (note.content.length > 150 ? '...' : '');
+            noteItem.innerHTML = `
+                <div class="note-header">
+                    <div class="note-title">${note.title}</div>
+                    <div class="note-date">${formatDate(note.updatedAt)}</div>
+                </div>
+                <div class="note-tags">${note.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+                <div class="note-content">${parseContent(previewText)}</div>
+            `;
+            return noteItem;
+        }
+        function createNoteDetailView(note) {
+            const panel = createElement('div', ['panel', 'full-width']);
+            const backlinkRegex = /\[\[(.*?)\]\]/g;
+            const linkingNotes = state.notes.filter(n => n.id !== note.id && [...n.content.matchAll(backlinkRegex)].some(match => match[1] === note.title));
+            panel.innerHTML = `
+                <div class="panel-header">
+                    <h2 class="panel-title">${note.title}</h2>
+                    <div class="panel-controls"><button class="btn" data-action="edit" data-id="${note.id}">Edit Note</button></div>
+                </div>
+                <div class="note-content-full">${parseContent(note.content)}</div>
+                ${linkingNotes.length > 0 ? `
+                <div class="backlinks-container">
+                    <h3 class="backlinks-title">Linked References (${linkingNotes.length})</h3>
+                    <ul class="backlinks-list">
+                        ${linkingNotes.map(n => `<li><a href="#" class="internal-link" data-link-title="${n.title}">${n.title}</a></li>`).join('')}
+                    </ul>
+                </div>` : ''}
+            `;
+            return panel;
+        }
+        function createNoteForm(note = {}) {
+            return `
+                <div class="form-group">
+                    <label class="form-label" for="noteTitle">Title</label>
+                    <input class="form-input" type="text" id="noteTitle" placeholder="Enter the philosophical concept..." value="${note.title || ''}">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="noteContent">Content (Markdown & LaTeX supported)</label>
+                    <textarea class="form-textarea" id="noteContent" rows="12" placeholder="Use [[links]], $LaTeX$, and **Markdown**.">${note.content || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="noteTags">Tags (comma-separated)</label>
+                    <input class="form-input" type="text" id="noteTags" placeholder="philosophy, core-concept, ..." value="${(note.tags || []).join(', ')}">
+                </div>
+            `;
+        }
+
+        // --- 5. UI RENDERING ---
+        const contentArea = document.getElementById('contentArea');
+        const modal = document.getElementById('formModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFormContent = document.getElementById('modalFormContent');
+
+        function renderSection(sectionName) {
+            contentArea.innerHTML = '';
+            state.currentSection = sectionName;
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.section === sectionName));
+            const renderer = { dashboard: renderDashboard, notes: renderNotesList, graph: renderKnowledgeGraph, catalyst: renderCatalyst };
+            (renderer[sectionName] || renderer.dashboard)();
+        }
+        function renderDashboard() {
+            contentArea.innerHTML = `
+                <div class="panel"><div class="panel-header"><h2 class="panel-title">📊 Dashboard</h2></div>
+                <p>Welcome. Total notes: <strong>${state.notes.length}</strong></p></div>
+                <div class="panel"><div class="panel-header"><h2 class="panel-title">🌟 Daily Affirmation</h2></div>
+                <div class="affirmation-display">I embrace the fertile darkness of unknowing.</div></div>`;
+        }
+        function renderCatalyst() {
+            contentArea.innerHTML = `<div class="panel full-width"><div class="panel-header"><h2 class="panel-title">🎯 Daily Research Catalyst</h2></div>
+            <div class="catalyst-address"><strong>Professor Nihil addresses you:</strong><br><br><span>"The void you excavate reveals not emptiness, but the fertile darkness from which authentic understanding springs."</span></div></div>`;
+        }
+        function renderNotesList() {
+            const panel = createElement('div', ['panel', 'full-width']);
+            panel.appendChild(createElement('div', 'panel-header', '<h2 class="panel-title">📝 Philosophical Notes</h2>'));
+            if (state.notes.length === 0) {
+                panel.appendChild(createElement('div', 'empty-state', 'No notes yet. Create one to begin.'));
+            } else {
+                const container = createElement('div', 'notes-container');
+                state.notes.sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt)).forEach(note => container.appendChild(createNoteItem(note)));
+                panel.appendChild(container);
+            }
+            contentArea.appendChild(panel);
+        }
+        function renderNoteDetail(noteId) {
+            const note = state.notes.find(n => n.id === noteId);
+            if (note) contentArea.replaceChildren(createNoteDetailView(note));
+        }
+        function renderKnowledgeGraph() {
+            const panel = createElement('div', ['panel', 'full-width']);
+            panel.innerHTML = `<div class="panel-header"><h2 class="panel-title">🔗 Knowledge Graph</h2></div>`;
+            const graphContainer = createElement('div', 'knowledge-graph-container');
+            graphContainer.style.height = '600px';
+            panel.appendChild(graphContainer);
+            contentArea.appendChild(panel);
+            const nodes = state.notes.map(n => ({ id: n.id, label: n.title }));
+            const edges = [];
+            state.notes.forEach(note => {
+                [...note.content.matchAll(/\[\[(.*?)\]\]/g)].forEach(match => {
+                    const target = state.notes.find(n => n.title === match[1]);
+                    if(target) edges.push({ from: note.id, to: target.id, arrows: 'to' });
+                });
+            });
+            new vis.Network(graphContainer, { nodes, edges }, { nodes:{color:{border:'#4ecdc4',background:'#1a1a2e',highlight:{border:'#ff6b6b'}},font:{color:'#e8e8e8'}}, edges:{color:'rgba(255,107,107,0.4)'} }).on("click", p => p.nodes.length && renderNoteDetail(p.nodes[0]));
+        }
+        function showNoteModal(note = null) {
+            modalTitle.textContent = note ? 'Edit Philosophical Note' : 'Add New Philosophical Note';
+            modalFormContent.innerHTML = createNoteForm(note);
+            document.getElementById('saveButton').onclick = () => handleSaveNote(note ? note.id : null);
+            modal.classList.add('active');
+        }
+        
+        // --- 6. EVENT HANDLERS ---
+        function handleSaveNote(noteId) {
+            const data = {
+                title: document.getElementById('noteTitle').value.trim(),
+                content: document.getElementById('noteContent').value,
+                tags: document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(Boolean)
+            };
+            if (!data.title) return alert('Title is required.');
+            noteId ? updateItem('note', noteId, data) : addItem('note', data);
+            modal.classList.remove('active');
+            renderSection(state.currentSection === 'notes' ? 'notes' : 'dashboard');
+        }
+        function setupEventListeners() {
+            document.getElementById('sidebar').addEventListener('click', e => {
+                const navItem = e.target.closest('.nav-item');
+                if (navItem) renderSection(navItem.dataset.section);
+            });
+            document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+            document.getElementById('addButton').addEventListener('click', () => showNoteModal());
+            document.getElementById('quickAddButton').addEventListener('click', () => showNoteModal());
+            document.getElementById('cancelButton').addEventListener('click', () => modal.classList.remove('active'));
+            contentArea.addEventListener('click', e => {
+                const target = e.target;
+                if (target.closest('[data-action="edit"]')) {
+                    const note = state.notes.find(n => n.id === target.closest('[data-action="edit"]').dataset.id);
+                    if (note) showNoteModal(note);
+                } else if (target.closest('.note-item')) {
+                    renderNoteDetail(target.closest('.note-item').dataset.id);
+                } else if (target.closest('.internal-link')) {
+                    e.preventDefault();
+                    const title = target.closest('.internal-link').dataset.linkTitle;
+                    const note = state.notes.find(n => n.title === title);
+                    if (note) renderNoteDetail(note.id);
+                    else if (confirm(`Note "${title}" does not exist. Create it?`)) showNoteModal({ title, content: '', tags: [] });
+                }
+            });
+            document.getElementById('globalSearch').addEventListener('input', e => {
+                const query = e.target.value.toLowerCase();
+                if (state.currentSection !== 'notes') renderSection('notes');
+                document.querySelectorAll('.note-item').forEach(item => {
+                    const isVisible = item.innerText.toLowerCase().includes(query);
+                    item.style.display = isVisible ? 'block' : 'none';
+                });
+            });
+        }
+
+        // --- 7. INITIALIZATION ---
+        function initApp() {
+            loadData();
+            setupEventListeners();
+            renderDashboard();
+            console.log("Nihiltheism PKM v2.1 Initialized.");
+        }
+        initApp();
+    </script>
+</body>
+</html>

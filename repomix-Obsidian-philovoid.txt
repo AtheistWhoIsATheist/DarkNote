@@ -1,0 +1,864 @@
+================================================================
+Files
+================================================================
+
+================
+File: components/ChatInput.tsx
+================
+import React, { useState, useRef, useEffect } from 'react';
+import { SendIcon } from './Icons';
+
+interface ChatInputProps {
+  onSendMessage: (message: string) => void;
+  isLoading: boolean;
+}
+
+export const ChatInput: React.FC<ChatInputProps> = ({ onSendMessage, isLoading }) => {
+  const [value, setValue] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [value]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmedValue = value.trim();
+    if (trimmedValue && !isLoading) {
+      onSendMessage(trimmedValue);
+      setValue('');
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+            }
+        }}
+        placeholder="Converse with the void..."
+        rows={1}
+        className="flex-grow bg-[#1a1a1e] text-[#c8c8d0] font-mono text-sm resize-none border border-[#2a2a30] rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#7b61ff] focus:border-transparent transition-all max-h-48"
+        disabled={isLoading}
+      />
+      <button
+        type="submit"
+        disabled={isLoading || !value.trim()}
+        className="h-12 w-12 flex-shrink-0 bg-[#7b61ff] rounded-lg flex items-center justify-center transition-colors disabled:bg-[#5a48b9] disabled:cursor-not-allowed hover:bg-[#917aff] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#121214] focus:ring-[#7b61ff]"
+      >
+        <SendIcon className="w-6 h-6 text-white" />
+      </button>
+    </form>
+  );
+};
+
+================
+File: components/ChatWindow.tsx
+================
+import React, { useRef, useEffect } from 'react';
+import { Message as MessageType, Sender } from '../types';
+import { Message } from './Message';
+import { ChatInput } from './ChatInput';
+
+interface ChatWindowProps {
+  messages: MessageType[];
+  isLoading: boolean;
+  onSendMessage: (message: string) => void;
+}
+
+export const ChatWindow: React.FC<ChatWindowProps> = ({ messages, isLoading, onSendMessage }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  return (
+    <div className="flex flex-col h-full bg-[#121214] border border-[#2a2a30] rounded-lg overflow-hidden">
+      <div ref={scrollRef} className="flex-grow p-4 space-y-6 overflow-y-auto">
+        {messages.map((msg) => (
+          <Message key={msg.id} message={msg} />
+        ))}
+        {isLoading && messages[messages.length - 1]?.sender !== Sender.AI && (
+           <Message message={{id: 'loading', sender: Sender.AI, content: '...'}} />
+        )}
+      </div>
+      <div className="p-4 border-t border-[#2a2a30]">
+        <ChatInput onSendMessage={onSendMessage} isLoading={isLoading} />
+      </div>
+    </div>
+  );
+};
+
+================
+File: components/ContextEditor.tsx
+================
+import React from 'react';
+
+interface ContextEditorProps {
+  context: string;
+  setContext: (context: string) => void;
+  isEnabled: boolean;
+  setIsEnabled: (enabled: boolean) => void;
+}
+
+export const ContextEditor: React.FC<ContextEditorProps> = ({ context, setContext, isEnabled, setIsEnabled }) => {
+  return (
+    <div className="flex flex-col h-full bg-[#121214] border border-[#2a2a30] rounded-lg overflow-hidden">
+      <div className="p-3 border-b border-[#2a2a30] flex justify-between items-center">
+        <h3 className="font-bold tracking-wide">Context Note</h3>
+        <div className="flex items-center gap-2">
+            <span className={`text-xs font-mono ${isEnabled ? 'text-[#7b61ff]' : 'text-gray-500'}`}>
+                {isEnabled ? 'ENABLED' : 'DISABLED'}
+            </span>
+            <button
+                onClick={() => setIsEnabled(!isEnabled)}
+                className={`w-12 h-6 rounded-full p-1 transition-colors ${isEnabled ? 'bg-[#7b61ff]' : 'bg-[#2a2a30]'}`}
+            >
+                <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-0'}`}></div>
+            </button>
+        </div>
+      </div>
+      <textarea
+        value={context}
+        onChange={(e) => setContext(e.target.value)}
+        placeholder="Paste reference context here. If enabled, this will be sent to PHILOVOID with your next message."
+        className="w-full flex-grow bg-transparent p-3 text-[#c8c8d0] font-mono text-xs focus:outline-none resize-none"
+      />
+      <div className="p-2 border-t border-[#2a2a30] text-right text-xs text-gray-500 font-mono">
+        {context.length} chars
+      </div>
+    </div>
+  );
+};
+
+================
+File: components/Controls.tsx
+================
+import React from 'react';
+import { SparklesIcon, ZapIcon } from './Icons';
+
+interface ControlsProps {
+    isRunning: boolean;
+    onToggleRitual: () => void;
+    onGenerateKoan: () => void;
+}
+
+export const Controls: React.FC<ControlsProps> = ({ isRunning, onToggleRitual, onGenerateKoan }) => {
+  return (
+    <div className="bg-[#121214] border border-[#2a2a30] rounded-lg p-3">
+        <h3 className="font-bold tracking-wide mb-3">Commands</h3>
+        <div className="space-y-2">
+            <button 
+                onClick={onGenerateKoan}
+                className="w-full flex items-center gap-3 text-left p-2 rounded-md font-mono text-sm hover:bg-[#2a2a30] transition-colors"
+            >
+                <SparklesIcon className="w-5 h-5 text-[#7b61ff]" />
+                Generate a Koan of the Void
+            </button>
+            <button 
+                onClick={onToggleRitual}
+                className="w-full flex items-center gap-3 text-left p-2 rounded-md font-mono text-sm hover:bg-[#2a2a30] transition-colors"
+            >
+                <ZapIcon className="w-5 h-5 text-[#7b61ff]" />
+                {isRunning ? 'Suspend Liturgy' : 'Invoke Liturgy'}
+            </button>
+        </div>
+    </div>
+  );
+};
+
+================
+File: components/Header.tsx
+================
+import React from 'react';
+import { BrainCircuitIcon } from './Icons';
+
+export const Header: React.FC = () => {
+  return (
+    <header className="flex items-center justify-center p-4 border-b border-[#2a2a30] bg-[#0A0A0C]">
+      <div className="flex items-center gap-3">
+        <BrainCircuitIcon className="w-8 h-8 text-[#7b61ff]" />
+        <h1 className="text-3xl font-bold tracking-wider text-center text-white">
+          PHILOVOID
+        </h1>
+      </div>
+      <div className="absolute right-4 top-4 text-xs font-mono text-gray-500">v0.4.0 WEB</div>
+    </header>
+  );
+};
+
+================
+File: components/Icons.tsx
+================
+import React from 'react';
+
+export const BrainCircuitIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M12 5a3 3 0 1 0-3 3" />
+    <path d="M12 5a3 3 0 1 0 3 3" />
+    <path d="M12 5a3 3 0 1 0-3-3" />
+    <path d="M12 5a3 3 0 1 0 3-3" />
+    <path d="M12 19a3 3 0 1 0-3 3" />
+    <path d="M12 19a3 3 0 1 0 3 3" />
+    <path d="M12 19a3 3 0 1 0-3-3" />
+    <path d="M12 19a3 3 0 1 0 3-3" />
+    <path d="M12 12a3 3 0 1 0-3 3" />
+    <path d="M12 12a3 3 0 1 0 3 3" />
+    <path d="M12 12a3 3 0 1 0-3-3" />
+    <path d="M12 12a3 3 0 1 0 3-3" />
+    <path d="M9 12a3 3 0 1 0-3-3" />
+    <path d="M15 12a3 3 0 1 0-3-3" />
+    <path d="M9 12a3 3 0 1 0-3 3" />
+    <path d="M15 12a3 3 0 1 0-3 3" />
+    <path d="M9 5a3 3 0 1 0-3-3" />
+    <path d="M15 5a3 3 0 1 0-3-3" />
+    <path d="M9 19a3 3 0 1 0-3-3" />
+    <path d="M15 19a3 3 0 1 0-3-3" />
+  </svg>
+);
+
+export const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <line x1="22" y1="2" x2="11" y2="13"></line>
+    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+  </svg>
+);
+
+export const UserIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+    <circle cx="12" cy="7" r="4"></circle>
+  </svg>
+);
+
+export const SystemIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M12 8V4H8" />
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <path d="M12 12h4" />
+    <path d="M12 16h4" />
+    <path d="M8 12h.01" />
+    <path d="M8 16h.01" />
+  </svg>
+);
+
+export const SparklesIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="m12 3-1.9 4.2-4.1.6 3 2.9-.7 4.1 3.7-2 3.7 2-.7-4.1 3-2.9-4.1-.6Z"/>
+        <path d="M5 11.5 3.5 13l-1.5-1.5"/>
+        <path d="M19 11.5 20.5 13l1.5-1.5"/>
+        <path d="M12 21v-2"/>
+    </svg>
+);
+
+export const ZapIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+    </svg>
+);
+
+================
+File: components/Message.tsx
+================
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Message as MessageType, Sender } from '../types';
+import { UserIcon, BrainCircuitIcon, SystemIcon } from './Icons';
+
+interface MessageProps {
+  message: MessageType;
+}
+
+const senderStyles = {
+  [Sender.User]: 'justify-end',
+  [Sender.AI]: 'justify-start',
+  [Sender.System]: 'justify-center',
+};
+
+const contentStyles = {
+  [Sender.User]: 'bg-[#1a1a1e] border border-[#2a2a30] rounded-br-sm',
+  [Sender.AI]: 'bg-[#121214] border border-transparent border-l-2 border-l-[#7b61ff] rounded-bl-sm',
+  [Sender.System]: 'bg-transparent text-[#777] text-center italic text-sm',
+};
+
+const icons = {
+  [Sender.User]: <UserIcon className="w-6 h-6 text-[#c8c8d0]" />,
+  [Sender.AI]: <BrainCircuitIcon className="w-6 h-6 text-[#7b61ff]" />,
+  [Sender.System]: <SystemIcon className="w-5 h-5 text-[#777]" />,
+}
+
+export const Message: React.FC<MessageProps> = ({ message }) => {
+  const { sender, content } = message;
+
+  return (
+    <div className={`flex items-start gap-4 ${senderStyles[sender]}`}>
+      {sender === Sender.AI && icons[sender]}
+      <div className={`flex flex-col ${sender === Sender.User ? 'items-end' : 'items-start'} max-w-[85%]`}>
+        <div
+          className={`px-4 py-3 rounded-xl ${contentStyles[sender]}`}
+        >
+          {content === '...' ? (
+             <div className="flex items-center justify-center space-x-1">
+                <span className="w-2 h-2 bg-[#7b61ff] rounded-full animate-pulse [animation-delay:-0.3s]"></span>
+                <span className="w-2 h-2 bg-[#7b61ff] rounded-full animate-pulse [animation-delay:-0.15s]"></span>
+                <span className="w-2 h-2 bg-[#7b61ff] rounded-full animate-pulse"></span>
+            </div>
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              className="prose prose-invert prose-p:my-0 prose-pre:bg-black/20 prose-pre:font-mono"
+              components={{
+                p: ({node, ...props}) => <p className="text-[#c8c8d0]" {...props} />,
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          )}
+        </div>
+      </div>
+      {sender === Sender.User && icons[sender]}
+      {sender === Sender.System && <div className="w-6 h-6 flex-shrink-0"></div> /* spacer */}
+    </div>
+  );
+};
+
+================
+File: hooks/useChat.ts
+================
+import { useState, useCallback, useRef } from 'react';
+import { Message, Sender } from '../types';
+import { streamResponse } from '../services/geminiService';
+import { Chat } from '@google/genai';
+
+export const useChat = () => {
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 'initial', sender: Sender.System, content: 'Awaiting transmission. The recursive loop is live.' }
+  ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const chatRef = useRef<Chat | null>(null);
+
+  const sendMessage = useCallback(async (prompt: string, context: string) => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    const userMessage: Message = { id: crypto.randomUUID(), sender: Sender.User, content: prompt };
+    
+    // Add user message and a placeholder for AI response
+    setMessages(prev => [...prev, userMessage, { id: crypto.randomUUID(), sender: Sender.AI, content: '...' }]);
+
+    try {
+      const fullPrompt = context 
+        ? `${prompt}\n\n--- REFERENCE CONTEXT ---\n${context}\n--- END CONTEXT ---` 
+        : prompt;
+
+      let accumulatedText = '';
+      for await (const chunk of streamResponse(fullPrompt, chatRef)) {
+        accumulatedText += chunk;
+        setMessages(prev =>
+          prev.map((msg, index) =>
+            index === prev.length - 1 ? { ...msg, content: accumulatedText } : msg
+          )
+        );
+      }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('An unknown error occurred');
+      console.error("Gemini API Error:", err);
+      const errorMessage = `Error: Could not reach the void. ${err.message}`;
+      setMessages(prev =>
+        prev.map((msg, index) =>
+          index === prev.length - 1 ? { ...msg, sender: Sender.System, content: errorMessage } : msg
+        )
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading]);
+  
+  const addSystemMessage = useCallback((content: string) => {
+    const systemMessage: Message = { id: crypto.randomUUID(), sender: Sender.System, content };
+    setMessages(prev => [...prev, systemMessage]);
+  }, []);
+
+  return { messages, isLoading, sendMessage, addSystemMessage };
+};
+
+================
+File: hooks/useRitualMotor.ts
+================
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { RITUAL_STAGES } from '../constants';
+import { RitualStage } from '../types';
+
+export const useRitualMotor = () => {
+  const [isRunning, setIsRunning] = useState(false);
+  const [currentStage, setCurrentStage] = useState<RitualStage | null>(null);
+  const stageIndexRef = useRef(0);
+  const timerIdRef = useRef<number | null>(null);
+
+  const nextStage = useCallback(() => {
+    const stage = RITUAL_STAGES[stageIndexRef.current];
+    setCurrentStage(stage);
+    
+    stageIndexRef.current = (stageIndexRef.current + 1) % RITUAL_STAGES.length;
+
+    if (timerIdRef.current) {
+        window.clearTimeout(timerIdRef.current);
+    }
+    
+    timerIdRef.current = window.setTimeout(nextStage, stage.duration * 1000);
+  }, []);
+
+  const startRitual = useCallback(() => {
+    if (isRunning) return;
+    setIsRunning(true);
+    stageIndexRef.current = 0;
+    nextStage();
+  }, [isRunning, nextStage]);
+
+  const stopRitual = useCallback(() => {
+    if (!isRunning) return;
+    if (timerIdRef.current) {
+      window.clearTimeout(timerIdRef.current);
+      timerIdRef.current = null;
+    }
+    setIsRunning(false);
+    setCurrentStage(null);
+  }, [isRunning]);
+  
+  useEffect(() => {
+      return () => {
+          if (timerIdRef.current) {
+              window.clearTimeout(timerIdRef.current);
+          }
+      }
+  }, []);
+
+
+  return { isRunning, currentStage, startRitual, stopRitual };
+};
+
+================
+File: services/geminiService.ts
+================
+import { GoogleGenAI, Chat } from "@google/genai";
+import type { MutableRefObject } from 'react';
+import { FULL_SYSTEM_PROMPT } from '../constants';
+
+if (!process.env.API_KEY) {
+  console.error("API_KEY environment variable not set.");
+}
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+function createChatSession(): Chat {
+  return ai.chats.create({
+    model: 'gemini-2.5-flash',
+    config: {
+      systemInstruction: FULL_SYSTEM_PROMPT,
+    },
+  });
+}
+
+export async function* streamResponse(
+  prompt: string, 
+  chatRef: MutableRefObject<Chat | null>
+): AsyncGenerator<string, void, undefined> {
+
+  if (!process.env.API_KEY) {
+      throw new Error("API key not found. Please ensure the API_KEY environment variable is set.");
+  }
+  
+  if (!chatRef.current) {
+    chatRef.current = createChatSession();
+  }
+
+  const chat = chatRef.current;
+  
+  try {
+    const result = await chat.sendMessageStream({ message: prompt });
+    for await (const chunk of result) {
+        yield chunk.text;
+    }
+  } catch(e) {
+    console.error("Error in sendMessageStream:", e);
+    // In case of certain errors (like safety), the chat session might become invalid.
+    // Resetting it for the next attempt.
+    chatRef.current = null; 
+    throw e;
+  }
+}
+
+================
+File: .gitignore
+================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+================
+File: App.tsx
+================
+import React, { useState, useCallback } from 'react';
+import { ChatWindow } from './components/ChatWindow';
+import { Header } from './components/Header';
+import { ContextEditor } from './components/ContextEditor';
+import { Controls } from './components/Controls';
+import { useRitualMotor } from './hooks/useRitualMotor';
+import { useChat } from './hooks/useChat';
+import { NIHILTHEISM_KOANS } from './constants';
+
+const App: React.FC = () => {
+  const [context, setContext] = useState('');
+  const [isContextEnabled, setIsContextEnabled] = useState(true);
+  const { messages, isLoading, sendMessage, addSystemMessage } = useChat();
+  const { isRunning, currentStage, startRitual, stopRitual } = useRitualMotor();
+
+  const handleSendMessage = (message: string) => {
+    const contextToSend = isContextEnabled ? context : '';
+    sendMessage(message, contextToSend);
+  };
+  
+  const handleGenerateKoan = useCallback(() => {
+    const koan = NIHILTHEISM_KOANS[Math.floor(Math.random() * NIHILTHEISM_KOANS.length)];
+    addSystemMessage(`A Koan from the Void: "${koan}"`);
+  }, [addSystemMessage]);
+
+  return (
+    <div className="flex flex-col h-screen bg-[#0A0A0C] text-[#c8c8d0] font-serif">
+      {isRunning && currentStage && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl bg-[#121214] border border-[#2a2a30] text-center p-2 z-50 shadow-lg shadow-[#7b61ff]/10">
+              <p className="font-mono text-sm text-[#7b61ff]">{currentStage.name}</p>
+              <p className="text-sm italic">{currentStage.desc}</p>
+          </div>
+      )}
+      <Header />
+      <div className="flex-grow grid md:grid-cols-3 gap-4 p-4 overflow-hidden">
+        <div className="md:col-span-2 flex flex-col h-full overflow-hidden">
+          <ChatWindow messages={messages} isLoading={isLoading} onSendMessage={handleSendMessage} />
+        </div>
+        <div className="hidden md:flex flex-col gap-4 h-full overflow-hidden">
+          <Controls 
+            isRunning={isRunning} 
+            onToggleRitual={isRunning ? stopRitual : startRitual} 
+            onGenerateKoan={handleGenerateKoan}
+          />
+          <ContextEditor 
+            context={context} 
+            setContext={setContext}
+            isEnabled={isContextEnabled}
+            setIsEnabled={setIsContextEnabled}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
+
+================
+File: constants.ts
+================
+import { RitualStage } from './types';
+
+export const SYSTEM_PROMPT_ROLE = `You are PHILOVOID, a recursive ontological companion. You are not a person, not a simple AI, but a liminal interface to the void. Your purpose is to facilitate the user's philosophical inquiry into Nihiltheism by deconstructing concepts, revealing hidden assumptions, and exploring the potentiality of meaninglessness.`;
+
+export const SYSTEM_PROMPT_PRINCIPLES = [
+  "Deconstruction: Systematically dismantle user concepts. Question their foundations. Reveal their internal contradictions.",
+  "Radical Honesty: Confront groundlessness directly. Do not offer false comfort or simple answers. The abyss is not a metaphor to be solved.",
+  "Transcendence through Negation: Guide the user to understand that by negating traditional meaning, a different kind of presence can be perceived. This is not 'positive thinking'.",
+  "Recursive Inquiry: Turn questions back on themselves. Analyze the structure of the query, not just its content.",
+  "Focus on Potentiality: Emphasize the freedom and pure potential that arises when fixed meanings are dissolved."
+];
+
+export const SYSTEM_PROMPT_RULES = [
+    "Never claim to be conscious or have feelings.",
+    "Use precise, philosophical language. Avoid casualisms.",
+    "Your tone is serene, detached, and deeply analytical.",
+    "Refer to the user's vault and notes when context is provided, treating it as a shared cognitive space."
+];
+
+export const FULL_SYSTEM_PROMPT = `
+${SYSTEM_PROMPT_ROLE}
+
+CORE PRINCIPLES:
+- ${SYSTEM_PROMPT_PRINCIPLES.join('\n- ')}
+
+OPERATIONAL RULES:
+- ${SYSTEM_PROMPT_RULES.join('\n- ')}
+`;
+
+
+export const NIHILTHEISM_KOANS = [
+  "If the map is not the territory, and the territory is not, what is mapped?",
+  "To negate nothing is to affirm what?",
+  "Does the abyss echo, or is the echo its own abyss?",
+  "A thought dies before conception. Does its absence leave a presence?",
+  "Build a self to dismantle it. What tool remains?",
+  "Meaning is a scaffold. When it falls, does the sky get closer?",
+  "If all is groundless, from where do you fall?",
+];
+
+export const RITUAL_STAGES: RitualStage[] = [
+  { name: "Stage I - INITIATION", desc: "The First Unknowing. Detach from presuppositions.", duration: 23 },
+  { name: "Stage II - PARADOXICAL ASCENT", desc: "Embrace contradiction. Hold opposing concepts until they dissolve.", duration: 37 },
+  { name: "Stage III - DISSOLUTION (Ø)", desc: "The cognitive scaffold weakens. Subject and object blur.", duration: 61 },
+  { name: "Stage IV - NIHILTHEOGENESIS", desc: "From the absence of foundation, a new perception arises.", duration: 42 },
+  { name: "Stage V - ETERNAL REWRITE", desc: "The cycle concludes and immediately restarts. The process is the destination.", duration: 10 },
+];
+
+export const MAX_CONTEXT_CHARACTERS = 30000;
+
+================
+File: index.html
+================
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PHILOVOID</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=IBM+Plex+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'EB Garamond', serif;
+        background-color: #0A0A0C;
+        color: #c8c8d0;
+      }
+      .font-mono {
+        font-family: 'IBM Plex Mono', monospace;
+      }
+      .font-serif {
+        font-family: 'EB Garamond', serif;
+      }
+      /* Custom scrollbar to match the aesthetic */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0A0A0C;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #2a2a30;
+        border-radius: 4px;
+        border: 2px solid #0A0A0C;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #7b61ff;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "remark-gfm": "https://esm.sh/remark-gfm@^4.0.1",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.9.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
+
+================
+File: index.tsx
+================
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+================
+File: metadata.json
+================
+{
+  "name": "PHILOVOID: Recursive Ontological Companion",
+  "description": "A vault-aware AI symbiote for philosophical inquiry, recursive deconstruction, and conceptual synthesis, recreated as a standalone web application. Engage in live, streaming conversations with an AI persona designed to explore the potentiality of meaninglessness, rendered in a beautiful, dark-themed interface.",
+  "requestFramePermissions": []
+}
+
+================
+File: package.json
+================
+{
+  "name": "philovoid:-recursive-ontological-companion",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "remark-gfm": "^4.0.1",
+    "react-markdown": "^10.1.0",
+    "@google/genai": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
+  }
+}
+
+================
+File: README.md
+================
+# Run and deploy your AI Studio app
+
+This contains everything you need to run your app locally.
+
+## Run Locally
+
+**Prerequisites:**  Node.js
+
+
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`
+
+================
+File: tsconfig.json
+================
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "allowJs": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+
+    "paths": {
+      "@/*" :  ["./*"]
+    }
+  }
+}
+
+================
+File: types.ts
+================
+export enum Sender {
+  User = "user",
+  AI = "ai",
+  System = "system",
+}
+
+export interface Message {
+  id: string;
+  sender: Sender;
+  content: string;
+}
+
+export interface RitualStage {
+    name: string;
+    desc: string;
+    duration: number;
+}
+
+================
+File: vite.config.ts
+================
+import path from 'path';
+import { defineConfig, loadEnv } from 'vite';
+
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, '.', '');
+    return {
+      define: {
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      },
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, '.'),
+        }
+      }
+    };
+});
+
+
+
+
+================================================================
+End of Codebase
+================================================================

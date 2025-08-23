@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DarkNote</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.5/theme/darcula.min.css">
+  <style>
+    body, html {
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    
+    .dark-notes-app {
+      display: flex;
+      height: 100vh;
+    }
+    
+    .sidebar {
+      width: 230px;
+      background-color: #0a0a0a;
+      border-right: 1px solid #333;
+    }
+    
+    .main-content {
+      flex: 1;
+      background-color: #121212;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .CodeMirror {
+      height: calc(100vh - 250px);
+      background-color: #121212 !important;
+      border: none;
+      color: #e0e0e0 !important;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    
+    .CodeMirror-cursor {
+      border-left: 2px solid #fff !important;
+    }
+    
+    .editor-toolbar {
+      opacity: 0.8;
+      background-color: #1a1a1a;
+      border: none;
+    }
+    
+    .editor-toolbar button {
+      color: #e0e0e0 !important;
+    }
+    
+    .editor-toolbar button:hover, 
+    .editor-toolbar button.active {
+      background: #333 !important;
+    }
+    
+    .note-item {
+      transition: background-color 0.2s;
+    }
+    
+    .note-item:hover {
+      background-color: #2a2a2a;
+    }
+    
+    .note-item.active {
+      background-color: #2d2d2d;
+      border-left: 3px solid #6366f1;
+    }
+    
+    input[type="text"], textarea {
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+      color: #e0e0e0;
+    }
+    
+    input[type="text"]:focus, textarea:focus {
+      border-color: #6366f1;
+      outline: none;
+    }
+    
+    .btn {
+      transition: all 0.2s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+    
+    .ai-sidebar {
+      width: 320px;
+      background-color: #111;
+      border-left: 1px solid #333;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      z-index: 50;
+    }
+    
+    .ai-sidebar.open {
+      transform: translateX(0);
+    }
+    
+    .backlink {
+      background-color: rgba(99, 102, 241, 0.1);
+      border-bottom: 1px dashed #6366f1;
+    }
+    
+    .tag {
+      background-color: rgba(99, 102, 241, 0.2);
+      color: #a5a6f6;
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .confirmation-modal {
+      background-color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .modal-content {
+      background-color: #1a1a1a;
+      border: 1px solid #333;
+    }
+    
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #1a1a1a;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    
+    /* For the preview */
+    .markdown-preview {
+      padding: 20px;
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+    
+    .markdown-preview h1, 
+    .markdown-preview h2, 
+    .markdown-preview h3 {
+      color: #fff;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    
+    .markdown-preview h1 {
+      font-size: 1.8em;
+      border-bottom: 1px solid #333;
+      padding-bottom: 0.3em;
+    }
+    
+    .markdown-preview h2 {
+      font-size: 1.5em;
+    }
+    
+    .markdown-preview h3 {
+      font-size: 1.3em;
+    }
+    
+    .markdown-preview p {
+      margin: 1em 0;
+    }
+    
+    .markdown-preview code {
+      background-color: #2d2d2d;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    
+    .markdown-preview pre {
+      background-color: #1a1a1a;
+      padding: 1em;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+    
+    .markdown-preview blockquote {
+      border-left: 4px solid #444;
+      padding-left: 1em;
+      margin: 1em 0;
+      color: #aaa;
+    }
+    
+    .markdown-preview a {
+      color: #6366f1;
+      text-decoration: none;
+    }
+    
+    .markdown-preview a:hover {
+      text-decoration: underline;
+    }
+    
+    .markdown-preview img {
+      max-width: 100%;
+    }
+    
+    .markdown-preview table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 1em 0;
+    }
+    
+    .markdown-preview th, .markdown-preview td {
+      border: 1px solid #333;
+      padding: 8px 12px;
+    }
+    
+    .markdown-preview th {
+      background-color: #1a1a1a;
+    }
+    
+    .ai-loader {
+      display: inline-block;
+      position: relative;
+      width: 80px;
+      height: 20px;
+    }
+    
+    .ai-loader div {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #6366f1;
+      animation-timing-function: cubic-bezier(0, 1, 1, 0);
+    }
+    
+    .ai-loader div:nth-child(1) {
+      left: 8px;
+      animation: ai-loader1 0.6s infinite;
+    }
+    
+    .ai-loader div:nth-child(2) {
+      left: 8px;
+      animation: ai-loader2 0.6s infinite;
+    }
+    
+    .ai-loader div:nth-child(3) {
+      left: 32px;
+      animation: ai-loader2 0.6s infinite;
+    }
+    
+    .ai-loader div:nth-child(4) {
+      left: 56px;
+      animation: ai-loader3 0.6s infinite;
+    }
+    
+    @keyframes ai-loader1 {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+    
+    @keyframes ai-loader2 {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(24px, 0); }
+    }
+    
+    @keyframes ai-loader3 {
+      0% { transform: scale(1); }
+      100% { transform: scale(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="dark-notes-app">
+    <!-- Sidebar -->
+    <div class="sidebar flex flex-col h-full">
+      <div class="p-4">
+        <h1 class="text-xl font-bold mb-4">Dark Notes</h1>
+        <div class="mb-4">
+          <input type="text" id="search-input" class="w-full p-2 rounded bg-gray-900 text-gray-200" placeholder="Search notes...">
+        </div>
+        <button id="new-note-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded mb-2">
+          <i class="fas fa-plus mr-2"></i> New Note
+        </button>
+        <button id="deepresearch-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 px-4 rounded">
+          <i class="fas fa-search mr-2"></i> #DEEPRESEARCH
+        </button>
+      </div>
+      <div class="overflow-y-auto flex-grow" id="note-list">
+        <!-- Notes will be listed here dynamically -->
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content flex flex-col">
+      <div class="p-4">
+        <input type="text" id="note-title" class="w-full p-2 text-xl mb-2 rounded bg-gray-900" placeholder="Note Title">
+        <input type="text" id="note-tags" class="w-full p-2 mb-4 rounded bg-gray-900" placeholder="Tags (comma-separated)">
+        <div id="editor-container">
+          <textarea id="markdown-editor" placeholder="Enter your note here..."></textarea>
+        </div>
+        <div class="flex justify-between items-center mt-2 mb-4 text-sm text-gray-400">
+          <div id="word-counter">0 characters, 0 words</div>
+          <div class="flex">
+            <input type="text" id="ai-prompt" class="p-2 rounded bg-gray-900 mr-2" placeholder="Enter custom prompt or leave blank for default">
+            <select id="ai-action" class="p-2 rounded bg-gray-900">
+              <option value="summarize">Summarize</option>
+              <option value="expand">Expand</option>
+              <option value="research">Research</option>
+              <option value="brainstorm">Brainstorm</option>
+              <option value="rewrite">Rewrite</option>
+              <option value="analyze">Analyze</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="save-note-btn" class="btn bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded">
+            <i class="fas fa-save mr-1"></i> Save Note
+          </button>
+          <button id="clear-btn" class="btn bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded">
+            <i class="fas fa-eraser mr-1"></i> Clear
+          </button>
+          <button id="delete-note-btn" class="btn bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded">
+            <i class="fas fa-trash mr-1"></i> Delete Note
+          </button>
+          <button id="md-preview-btn" class="btn bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded">
+            <i class="fas fa-eye mr-1"></i> MD Preview
+          </button>
+          <button id="gpt-preview-btn" class="btn bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded">
+            <i class="fas fa-robot mr-1"></i> GPT Preview
+          </button>
+          <button id="export-notes-btn" class="btn bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded">
+            <i class="fas fa-file-export mr-1"></i> Export Notes
+          </button>
+          <button id="gpt-btn" class="btn bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">
+            <i class="fas fa-brain mr-1"></i> GPT
+          </button>
+          <button id="toggle-ai-sidebar-btn" class="btn bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">
+            <i class="fas fa-robot mr-1"></i> Toggle AI Agent Sidebar
+          </button>
+        </div>
+      </div>
+      <div class="text-center text-sm text-gray-500 p-2">
+        © 2023 DarkNote App
+      </div>
+    </div>
+
+    <!-- AI Sidebar -->
+    <div class="ai-sidebar" id="ai-sidebar">
+      <div class="p-4 h-full flex flex-col">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-bold">AI Philosopher</h2>
+          <button id="close-ai-sidebar" class="text-gray-400 hover:text-gray-200">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mb-4">
+          <h3 class="font-medium mb-2">AI Controls</h3>
+          <div class="space-y-2">
+            <button id="analyze-note-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded text-left">
+              <i class="fas fa-search mr-2"></i> Analyze Current Note
+            </button>
+            <button id="suggest-tags-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded text-left">
+              <i class="fas fa-tags mr-2"></i> Suggest Tags
+            </button>
+            <button id="web-search-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded text-left">
+              <i class="fas fa-globe mr-2"></i> Web Search
+            </button>
+            <button id="generate-report-btn" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 py-2 px-4 rounded text-left">
+              <i class="fas fa-file-alt mr-2"></i> Generate Report
+            </button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <h3 class="font-medium mb-2">Backlinks</h3>
+          <div id="backlinks-container" class="bg-gray-900 rounded p-2 min-h-[100px] max-h-[150px] overflow-y-auto text-sm">
+            <div class="text-gray-500 italic">No backlinks found</div>
+          </div>
+        </div>
+        <div class="flex-grow overflow-y-auto">
+          <h3 class="font-medium mb-2">AI Assistant</h3>
+          <div id="ai-output" class="bg-gray-900 rounded p-4 min-h-[200px] text-sm">
+            <p class="mb-3">Welcome to the AI Philosopher! I'm here to help you with your notes.</p>
+            <p>How can I assist you today?</p>
+          </div>
+        </div>
+        <div class="mt-4">
+          <div class="flex">
+            <input type="text" id="ai-input" class="flex-grow p-2 rounded-l bg-gray-900" placeholder="Ask the AI...">
+            <button id="send-to-ai-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-r">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <!-- Delete Confirmation Modal -->
+  <div id="delete-modal" class="fixed inset-0 flex items-center justify-center hidden confirmation-modal z-50">
+    <div class="modal-content p-6 rounded-lg w-96">
+      <h3 class="text-xl font-bold mb-4">Confirm Deletion</h3>
+      <p class="mb-6">Are you sure you want to delete this note? This action cannot be undone.</p>
+      <div class="flex justify-end space-x-4">
+        <button id="cancel-delete" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Cancel</button>
+        <button id="confirm-delete" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded">Delete</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Export Modal -->
+  <div id="export-modal" class="fixed inset-0 flex items-center justify-center hidden confirmation-modal z-50">
+    <div class="modal-content p-6 rounded-lg w-96">
+      <h3 class="text-xl font-bold mb-4">Export Notes</h3>
+      <p class="mb-4">Choose export format:</p>
+      <div class="space-y-2 mb-6">
+        <button id="export-json" class="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-left">
+          <i class="fas fa-file-code mr-2"></i> Export as JSON
+        </button>
+        <button id="export-markdown" class="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-left">
+          <i class="fas fa-file-alt mr-2"></i> Export as Markdown files
+        </button>
+      </div>
+      <div class="flex justify-end">
+        <button id="close-export-modal" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Web Search Modal -->
+  <div id="web-search-modal" class="fixed inset-0 flex items-center justify-center hidden confirmation-modal z-50">
+    <div class="modal-content p-6 rounded-lg w-[600px] max-h-[80vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-bold">Web Research</h3>
+        <button id="close-web-search-modal" class="text-gray-400 hover:text-gray-200">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="mb-4">
+        <div class="flex mb-2">
+          <input type="text" id="search-query" class="flex-grow p-2 rounded-l bg-gray-900" placeholder="Enter search query...">
+          <button id="run-search" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-r">
+            Search
+          </button>
+        </div>
+      </div>
+      <div id="search-results" class="bg-gray-900 rounded p-4 min-h-[300px]">
+        <p class="text-gray-500">Enter a search query to find information on the web</p>
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button id="insert-search-results" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-white">
+          Insert Selected Info
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Notification Toast -->
+  <div id="notification-toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg hidden">
+    Note saved successfully!
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.2.12/marked.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize EasyMDE
+      const easyMDE = new EasyMDE({
+        element: document.getElementById('markdown-editor'),
+        spellChecker: false,
+        autofocus: true,
+        placeholder: 'Enter your note here...',
+        toolbar: ["bold", "italic", "heading", "|", "quote", "unordered-list", "ordered-list", "|", "link", "image", "|", "code", "table"],
+        renderingConfig: {
+          singleLineBreaks: false,
+          codeSyntaxHighlighting: true,
+        },
+        status: false,
+        theme: 'darcula'
+      });
+      
+      // App state
+      const appState = {
+        notes: [],
+        currentNoteId: null,
+        isPreviewMode: false,
+        isGptPreviewMode: false,
+      };
+      
+      // DOM elements
+      const noteTitle = document.getElementById('note-title');
+      const noteTags = document.getElementById('note-tags');
+      const noteList = document.getElementById('note-list');
+      const searchInput = document.getElementById('search-input');
+      const wordCounter = document.getElementById('word-counter');
+      const aiSidebar = document.getElementById('ai-sidebar');
+      const aiOutput = document.getElementById('ai-output');
+      const aiInput = document.getElementById('ai-input');
+      const backlinksContainer = document.getElementById('backlinks-container');
+      const deleteModal = document.getElementById('delete-modal');
+      const exportModal = document.getElementById('export-modal');
+      const webSearchModal = document.getElementById('web-search-modal');
+      const notificationToast = document.getElementById('notification-toast');
+      const searchQuery = document.getElementById('search-query');
+      const searchResults = document.getElementById('search-results');
+      
+      // Initialize the application
+      function init() {
+        loadNotesFromLocalStorage();
+        renderNoteList();
+        setupEventListeners();
+        updateWordCount();
+      }
+      
+      // Event Listeners
+      function setupEventListeners() {
+        // Note management
+        document.getElementById('new-note-btn').addEventListener('click', createNewNote);
+        document.getElementById('save-note-btn').addEventListener('click', saveNote);
+        document.getElementById('clear-btn').addEventListener('click', clearEditor);
+        document.getElementById('delete-note-btn').addEventListener('click', () => {
+          if (appState.currentNoteId) {
+            deleteModal.classList.remove('hidden');
+          } else {
+            showNotification('No note selected');
+          }
+        });
+        
+        document.getElementById('confirm-delete').addEventListener('click', () => {
+          deleteNote();
+          deleteModal.classList.add('hidden');
+        });
+        
+        document.getElementById('cancel-delete').addEventListener('click', () => {
+          deleteModal.classList.add('hidden');
+        });
+        
+        // Preview modes
+        document.getElementById('md-preview-btn').addEventListener('click', toggleMarkdownPreview);
+        document.getElementById('gpt-preview-btn').addEventListener('click', toggleGptPreview);
+        
+        // Export
+        document.getElementById('export-notes-btn').addEventListener('click', () => {
+          exportModal.classList.remove('hidden');
+        });
+        
+        document.getElementById('export-json').addEventListener('click', exportNotesAsJson);
+        document.getElementById('export-markdown').addEventListener('click', exportNotesAsMarkdown);
+        document.getElementById('close-export-modal').addEventListener('click', () => {
+          exportModal.classList.add('hidden');
+        });
+        
+        // AI functionality
+        document.getElementById('toggle-ai-sidebar-btn').addEventListener('click', toggleAiSidebar);
+        document.getElementById('close-ai-sidebar').addEventListener('click', () => {
+          aiSidebar.classList.remove('open');
+        });
+        
+        document.getElementById('gpt-btn').addEventListener('click', () => {
+          const content = easyMDE.value();
+          const action = document.getElementById('ai-action').value;
+          const prompt = document.getElementById('ai-prompt').value;
+          processWithAI(content, action, prompt);
+        });
+        
+        document.getElementById('send-to-ai-btn').addEventListener('click', () => {
+          sendQueryToAI();
+        });
+        
+        aiInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            sendQueryToAI();
+          }
+        });
+        
+        document.getElementById('analyze-note-btn').addEventListener('click', () => {
+          analyzeCurrentNote();
+        });
+        
+        document.getElementById('suggest-tags-btn').addEventListener('click', () => {
+          suggestTags();
+        });
+        
+        document.getElementById('web-search-btn').addEventListener('click', () => {
+          webSearchModal.classList.remove('hidden');
+        });
+        
+        document.getElementById('close-web-search-modal').addEventListener('click', () => {
+          webSearchModal.classList.add('hidden');
+        });
+        
+        document.getElementById('run-search').addEventListener('click', () => {
+          runWebSearch();
+        });
+        
+        searchQuery.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            runWebSearch();
+          }
+        });
+        
+        document.getElementById('insert-search-results').addEventListener('click', () => {
+          insertSearchResults();
+        });
+        
+        document.getElementById('generate-report-btn').addEventListener('click', () => {
+          generateReport();
+        });
+        
+        document.getElementById('deepresearch-btn').addEventListener('click', () => {
+          deepResearch();
+        });
+        
+        // Search
+        searchInput.addEventListener('input', () => {
+          renderNoteList();
+        });
+        
+        // Watch for changes in the editor to update word count
+        easyMDE.codemirror.on('change', updateWordCount);
+      }
+      
+      // Note Management Functions
+      function createNewNote() {
+        appState.currentNoteId = null;
+        noteTitle.value = '';
+        noteTags.value = '';
+        easyMDE.value('');
+        updateWordCount();
+        highlightActiveNote();
+      }
+      
+      function saveNote() {
+        const title = noteTitle.value || 'Untitled Note';
+        const tags = noteTags.value.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
+        const content = easyMDE.value();
+        const timestamp = new Date().toISOString();
+        
+        if (appState.currentNoteId) {
+          // Update existing note
+          const noteIndex = appState.notes.findIndex(note => note.id === appState.currentNoteId);
+          if (noteIndex !== -1) {
+            appState.notes[noteIndex] = {
+              ...appState.notes[noteIndex],
+              title,
+              tags,
+              content,
+              updatedAt: timestamp
+            };
+          }
+        } else {
+          // Create new note
+          const newNote = {
+            id: Date.now().toString(),
+            title,
+            tags,
+            content,
+            createdAt: timestamp,
+            updatedAt: timestamp
+          };
+          appState.notes.push(newNote);
+          appState.currentNoteId = newNote.id;
+        }
+        
+        saveNotesToLocalStorage();
+        renderNoteList();
+        updateBacklinks();
+        showNotification('Note saved successfully!');
+      }
+      
+      function deleteNote() {
+        if (appState.currentNoteId) {
+          appState.notes = appState.notes.filter(note => note.id !== appState.currentNoteId);
+          saveNotesToLocalStorage();
+          renderNoteList();
+          createNewNote();
+          showNotification('Note deleted');
+        }
+      }
+      
+      function loadNoteToEditor(noteId) {
+        const note = appState.notes.find(note => note.id === noteId);
+        if (note) {
+          appState.currentNoteId = note.id;
+          noteTitle.value = note.title;
+          noteTags.value = note.tags.join(', ');
+          easyMDE.value(note.content);
+          updateWordCount();
+          highlightActiveNote();
+          updateBacklinks();
+        }
+      }
+      
+      function toggleMarkdownPreview() {
+        easyMDE.togglePreview();
+        appState.isPreviewMode = !appState.isPreviewMode;
+      }
+      
+      function toggleGptPreview() {
+        if (appState.isGptPreviewMode) {
+          // Go back to editing mode
+          easyMDE.value(easyMDE.value());
+          document.getElementById('gpt-preview-btn').innerHTML = '<i class="fas fa-robot mr-1"></i> GPT Preview';
+          appState.isGptPreviewMode = false;
+        } else {
+          // Enter GPT preview mode - process content with AI
+          const content = easyMDE.value();
+          document.getElementById('gpt-preview-btn').innerHTML = '<i class="fas fa-edit mr-1"></i> Back to Edit';
+          appState.isGptPreviewMode = true;
+          
+          // Display loading state
+          easyMDE.value('Generating AI preview...');
+          
+          setTimeout(() => {
+            const enhancedContent = simulateAIProcessing(content, 'enhance');
+            easyMDE.value(enhancedContent);
+          }, 1500);
+        }
+      }
+      
+      // Backlinks
+      function updateBacklinks() {
+        if (!appState.currentNoteId) {
+          backlinksContainer.innerHTML = '<div class="text-gray-500 italic">No backlinks found</div>';
+          return;
+        }
+        
+        const currentNote = appState.notes.find(note => note.id === appState.currentNoteId);
+        if (!currentNote) return;
+        
+        // Find notes that link to this note
+        const linkingNotes = appState.notes.filter(note => {
+          const regex = new RegExp(`\\[\\[${currentNote.title}\\]\\]`, 'i');
+          return note.id !== currentNote.id && regex.test(note.content);
+        });
+        
+        if (linkingNotes.length === 0) {
+          backlinksContainer.innerHTML = '<div class="text-gray-500 italic">No backlinks found</div>';
+          return;
+        }
+        
+        backlinksContainer.innerHTML = linkingNotes.map(note => {
+          return `<div class="mb-1 p-1 hover:bg-gray-800 rounded cursor-pointer backlink-item" data-note-id="${note.id}">
+            <span class="text-indigo-400">→</span> ${note.title}
+          </div>`;
+        }).join('');
+        
+        // Add event listeners to backlinks
+        document.querySelectorAll('.backlink-item').forEach(link => {
+          link.addEventListener('click', () => {
+            loadNoteToEditor(link.getAttribute('data-note-id'));
+          });
+        });
+      }
+      
+      function findAndFormatBacklinks(content) {
+        // Find [[Note Title]] patterns and convert to links
+        const backlinkRegex = /\[\[(.*?)\]\]/g;
+        return content.replace(backlinkRegex, (match, noteTitle) => {
+          // Check if the note exists
+          const linkedNote = appState.notes.find(note => 
+            note.title.toLowerCase() === noteTitle.toLowerCase()
+          );
+          
+          if (linkedNote) {
+            return `<span class="backlink cursor-pointer" data-note-id="${linkedNote.id}">[[${noteTitle}]]</span>`;
+          } else {
+            return `<span class="text-gray-400">[[${noteTitle}]]</span>`;
+          }
+        });
+      }
+      
+      // Word and character counting
+      function updateWordCount() {
+        const text = easyMDE.value();
+        const charCount = text.length;
+        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+        wordCounter.textContent = `${charCount} characters, ${wordCount} words`;
+      }
+      
+      // AI Functions
+      function toggleAiSidebar() {
+        aiSidebar.classList.toggle('open');
+      }
+      
+      function processWithAI(content, action, customPrompt) {
+        if (!content) {
+          showNotification('No content to process');
+          return;
+        }
+        
+        toggleAiSidebar();
+        aiOutput.innerHTML = `
+          <div class="mb-3">Processing your request...</div>
+          <div class="ai-loader"><div></div><div></div><div></div><div></div></div>
+        `;
+        
+        setTimeout(() => {
+          const result = simulateAIProcessing(content, action, customPrompt);
+          aiOutput.innerHTML = `
+            <div class="mb-3 text-indigo-400 font-medium">AI ${action.charAt(0).toUpperCase() + action.slice(1)} Results:</div>
+            <div>${result}</div>
+            <div class="mt-4 text-xs text-gray-500">Would you like to insert this into your note? 
+              <button class="insert-ai-result px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-white text-xs">Insert</button>
+            </div>
+          `;
+          
+          document.querySelector('.insert-ai-result').addEventListener('click', () => {
+            const currentContent = easyMDE.value();
+            easyMDE.value(`${currentContent}\n\n${result}`);
+          });
+        }, 2000);
+      }
+      
+      function sendQueryToAI() {
+        const query = aiInput.value;
+        if (!query) return;
+        
+        aiOutput.innerHTML += `
+          <div class="mt-4 mb-2 p-2 bg-gray-800 rounded">
+            <span class="font-medium">You:</span> ${query}
+          </div>
+          <div class="ai-loader mt-2"><div></div><div></div><div></div><div></div></div>
+        `;
+        
+        aiInput.value = '';
+        aiOutput.scrollTop = aiOutput.scrollHeight;
+        
+        setTimeout(() => {
+          const response = simulateAIResponse(query);
+          const loaderElement = aiOutput.querySelector('.ai-loader');
+          if (loaderElement) {
+            loaderElement.remove();
+          }
+          
+          aiOutput.innerHTML += `
+            <div class="mt-2 p-2 bg-indigo-900 bg-opacity-40 rounded">
+              <span class="font-medium text-indigo-400">AI Philosopher:</span> ${response}
+            </div>
+          `;
+          
+          aiOutput.scrollTop = aiOutput.scrollHeight;
+        }, 1500);
+      }
+      
+      function analyzeCurrentNote() {
+        const content = easyMDE.value();
+        if (!content) {
+          showNotification('No content to analyze');
+          return;
+        }
+        
+        aiOutput.innerHTML = `
+          <div class="mb-3">Analyzing your note...</div>
+          <div class="ai-loader"><div></div><div></div><div></div><div></div></div>
+        `;
+        
+        setTimeout(() => {
+          const analysis = simulateAIProcessing(content, 'analyze');
+          aiOutput.innerHTML = `
+            <div class="mb-3 text-indigo-400 font-medium">Analysis Results:</div>
+            <div>${analysis}</div>
+          `;
+        }, 2000);
+      }
+      
+      function suggestTags() {
+        const content = easyMDE.value();
+        if (!content) {
+          showNotification('No content for tag suggestions');
+          return;
+        }
+        
+        aiOutput.innerHTML = `
+          <div class="mb-3">Generating tag suggestions...</div>
+          <div class="ai-loader"><div></div><div></div><div></div><div></div></div>
+        `;
+        
+        setTimeout(() => {
+          const suggestedTags = simulateTagSuggestions(content);
+          
+          aiOutput.innerHTML = `
+            <div class="mb-3 text-indigo-400 font-medium">Suggested Tags:</div>
+            <div class="flex flex-wrap gap-2">
+              ${suggestedTags.map(tag => `
+                <span class="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded cursor-pointer suggested-tag">${tag}</span>
+              `).join('')}
+            </div>
+            <div class="mt-4 text-xs text-gray-500">Click on tags to add them to your note</div>
+          `;
+          
+          document.querySelectorAll('.suggested-tag').forEach(tagElement => {
+            tagElement.addEventListener('click', () => {
+              const currentTags = noteTags.value;
+              const newTag = tagElement.textContent;
+              
+              if (currentTags) {
+                const tagList = currentTags.split(',').map(t => t.trim());
+                if (!tagList.includes(newTag)) {
+                  noteTags.value = `${currentTags}, ${newTag}`;
+                }
+              } else {
+                noteTags.value = newTag;
+              }
+              
+              tagElement.classList.add('bg-indigo-700');
+              setTimeout(() => tagElement.classList.remove('bg-indigo-700'), 500);
+            });
+          });
+        }, 1500);
+      }
+      
+      function runWebSearch() {
+        const query = searchQuery.value;
+        if (!query) return;
+        
+        searchResults.innerHTML = `
+          <div class="mb-3">Searching the web for: "${query}"</div>
+          <div class="ai-loader"><div></div><div></div><div></div><div></div></div>
+        `;
+        
+        setTimeout(() => {
+          const results = simulateWebSearch(query);
+          
+          searchResults.innerHTML = `
+            <div class="mb-4 text-indigo-400 font-medium">Search Results:</div>
+            <div class="space-y-4">
+              ${results.map((result, index) => `
+                <div class="p-2 border border-gray-700 rounded">
+                  <div class="flex items-start">
+                    <input type="checkbox" id="result-${index}" class="search-result-checkbox mt-1 mr-2">
+                    <div>
+                      <h4 class="font-medium text-indigo-300">${result.title}</h4>
+                      <a href="#" class="text-xs text-gray-500 mb-2">${result.url}</a>
+                      <p class="text-sm">${result.snippet}</p>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }, 2000);
+      }
+      
+      function insertSearchResults() {
+        const selectedCheckboxes = document.querySelectorAll('.search-result-checkbox:checked');
+        if (selectedCheckboxes.length === 0) {
+          showNotification('No search results selected');
+          return;
+        }
+        
+        let insertContent = "## Web Research Results\n\n";
+        
+        selectedCheckboxes.forEach(checkbox => {
+          const resultDiv = checkbox.closest('div.border');
+          const title = resultDiv.querySelector('h4').textContent;
+          const url = resultDiv.querySelector('a').textContent;
+          const snippet = resultDiv.querySelector('p').textContent;
+          
+          insertContent += `### ${title}\n${snippet}\n\nSource: ${url}\n\n`;
+        });
+        
+        const currentContent = easyMDE.value();
+        easyMDE.value(`${currentContent}\n\n${insertContent}`);
+        
+        webSearchModal.classList.add('hidden');
+        showNotification('Research added to note');
+      }
+      
+      function generateReport() {
+        const content = easyMDE.value();
+        if (!content) {
+          showNotification('Need content to generate a report');
+          return;
+        }
+        
+        aiOutput.innerHTML = `
+          <div class="mb-3">Generating comprehensive report...</div>
+          <div class="ai-loader"><div></div><div></div><div></div><div></div></div>
+        `;
+        
+        setTimeout(() => {
+          const report = simulateReportGeneration(content);
+          
+          aiOutput.innerHTML = `
+            <div class="mb-3 text-indigo-400 font-medium">Generated Report:</div>
+            <div>${report}</div>
+            <div class="mt-4 text-xs text-gray-500">
+              <button class="insert-report px-2 py-1 bg-indigo-600 hover:bg-indigo-700 rounded text-white text-xs">Insert as New Note</button>
+            </div>
+          `;
+          
+          document.querySelector('.insert-report').addEventListener('click', () => {
+            // Create new note with the report
+            const reportTitle = `Report: ${noteTitle.value || 'Untitled'}`;
+            const newNote = {
+              id: Date.now().toString(),
+              title: reportTitle,
+              tags: ['report', 'ai-generated'],
+              content: report,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            appState.notes.push(newNote);
+            saveNotesToLocalStorage();
+            renderNoteList();
+            loadNoteToEditor(newNote.id);
+            showNotification('Report created as new note');
+          });
+        }, 3000);
+      }
+      
+      function deepResearch() {
+        // Advanced research combining multiple tools
+        webSearchModal.classList.remove('hidden');
+        searchQuery.value = noteTitle.value || 'research';
+        searchResults.innerHTML = `
+          <div class="text-center p-4">
+            <h3 class="font-medium text-xl mb-4">Deep Research Mode</h3>
+            <p class="mb-4">This mode combines web search, AI analysis, and report generation for comprehensive research.</p>
+            <button id="start-deep-research" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded">
+              Start Deep Research
+            </button>
+          </div>
+        `;
+        
+        document.getElementById('start-deep-research').addEventListener('click', () => {
+          const query = searchQuery.value;
+          if (!query) return;
+          
+          searchResults.innerHTML = `
+            <div class="mb-3">Conducting deep research on: "${query}"</div>
+            <div class="ai-loader"><div></div><div></div><div></div><div></div></div>
+          `;
+          
+          setTimeout(() => {
+            const researchResults = simulateDeepResearch(query);
+            
+            searchResults.innerHTML = `
+              <div class="mb-4 text-indigo-400 font-medium">Deep Research Complete:</div>
+              <div class="space-y-4">
+                <p class="text-sm">Combined results from multiple sources, analyzed for relevance and accuracy.</p>
+                <div class="p-3 border border-gray-700 rounded">
+                  ${researchResults}
+                </div>
+                <div class="flex justify-end mt-4">
+                  <button id="create-research-note" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded text-white">
+                    Create Research Note
+                  </button>
+                </div>
+              </div>
+            `;
+            
+            document.getElementById('create-research-note').addEventListener('click', () => {
+              // Create new note with the research
+              const researchTitle = `Research: ${query}`;
+              const newNote = {
+                id: Date.now().toString(),
+                title: researchTitle,
+                tags: ['research', 'deep-research', 'ai-generated'],
+                content: researchResults,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+              
+              appState.notes.push(newNote);
+              saveNotesToLocalStorage();
+              renderNoteList();
+              loadNoteToEditor(newNote.id);
+              webSearchModal.classList.add('hidden');
+              showNotification('Research note created');
+            });
+          }, 4000);
+        });
+      }
+      
+      // Storage Functions
+      function saveNotesToLocalStorage() {
+        localStorage.setItem('darknote_notes', JSON.stringify(appState.notes));
+      }
+      
+      function loadNotesFromLocalStorage() {
+        const storedNotes = localStorage.getItem('darknote_notes');
+        if (storedNotes) {
+          appState.notes = JSON.parse(storedNotes);
+        } else {
+          // Initialize with a welcome note if no notes exist
+          appState.notes = [
+            {
+              id: '1',
+              title: 'Welcome to DarkNote',
+              tags: ['welcome', 'guide'],
+              content: `# Welcome to DarkNote!
+
+DarkNote is an advanced note-taking application with built-in AI capabilities.
+
+## Key Features
+
+- 📝 **Markdown Editor** - Write notes using Markdown syntax
+- 🤖 **AI Philosopher** - Get help from our AI to improve your notes
+- 🔗 **Backlinks** - Create connections between notes using [[note name]] syntax
+- 🏷️ **Smart Tags** - AI-assisted tagging for better organization
+- 🔍 **Web Search** - Search the web without leaving the app
+- 📊 **Report Generation** - Create comprehensive reports from web content
+
+## Getting Started
+
+1. Create a new note using the + button in the sidebar
+2. Write your thoughts using Markdown
+3. Use the AI Philosopher to enhance your thinking
+4. Connect notes using [[brackets]] to create backlinks
+5. Organize notes into folders for better structure
+
+## AI Capabilities
+
+Click the AI button in the top right to:
+- Search the web for information
+- Rewrite your text for clarity
+- Generate comprehensive reports
+- Get tag suggestions
+- Brainstorm new ideas
+
+Enjoy using DarkNote for your knowledge management!`,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }
+          ];
+          saveNotesToLocalStorage();
+        }
+      }
+      
+      function renderNoteList() {
+        noteList.innerHTML = '';
+        const searchTerm = searchInput.value.toLowerCase();
+        
+        const filteredNotes = appState.notes.filter(note => {
+          return (
+            note.title.toLowerCase().includes(searchTerm) ||
+            note.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+            note.content.toLowerCase().includes(searchTerm)
+          );
+        });
+        
+        filteredNotes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        
+        if (filteredNotes.length === 0) {
+          noteList.innerHTML = '<div class="p-4 text-gray-500">No notes found</div>';
+          return;
+        }
+        
+        filteredNotes.forEach(note => {
+          const noteElement = document.createElement('div');
+          noteElement.classList.add('note-item', 'p-2', 'mb-1', 'cursor-pointer');
+          if (note.id === appState.currentNoteId) {
+            noteElement.classList.add('active');
+          }
+          
+          const previewText = note.content.length > 50 
+            ? note.content.substring(0, 50) + '...' 
+            : note.content;
+          
+          noteElement.innerHTML = `
+            <div class="font-medium">${note.title}</div>
+            <div class="text-xs text-gray-500 flex space-x-2 mt-1">
+              ${note.tags.length > 0 
+                ? `<div>${note.tags.slice(0, 2).map(tag => `<span class="tag px-1 rounded">${tag}</span>`).join(' ')}</div>` 
+                : ''}
+              <div>${formatDate(note.updatedAt)}</div>
+            </div>
+          `;
+          
+          noteElement.addEventListener('click', () => {
+            loadNoteToEditor(note.id);
+          });
+          
+          noteList.appendChild(noteElement);
+        });
+      }
+      
+      function highlightActiveNote() {
+        document.querySelectorAll('.note-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        if (appState.currentNoteId) {
+          const activeNote = document.querySelector(`.note-item[data-id="${appState.currentNoteId}"]`);
+          if (activeNote) {
+            activeNote.classList.add('active');
+          }
+        }
+      }
+      
+      // Export Functions
+      function exportNotesAsJson() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState.notes, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "darknote_export.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        
+        exportModal.classList.add('hidden');
+        showNotification('Notes exported as JSON');
+      }
+      
+      function exportNotesAsMarkdown() {
+        // Create a zip file using JSZip (simulated here)
+        const zip = { files: [] };
+        
+        appState.notes.forEach(note => {
+          const fileName = `${note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+          const content = `---\ntitle: ${note.title}\ntags: ${note.tags.join(', ')}\ndate: ${note.createdAt}\nupdated: ${note.updatedAt}\n---\n\n${note.content}`;
+          zip.files.push({ name: fileName, content });
+        });
+        
+        // Since we can't actually create a zip file without additional libraries,
+        // we'll just download a sample markdown file
+        const sampleNote = appState.notes[0];
+        const content = `---\ntitle: ${sampleNote.title}\ntags: ${sampleNote.tags.join(', ')}\ndate: ${sampleNote.createdAt}\nupdated: ${sampleNote.updatedAt}\n---\n\n${sampleNote.content}`;
+        
+        const dataStr = "data:text/markdown;charset=utf-8," + encodeURIComponent(content);
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `${sampleNote.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        
+        exportModal.classList.add('hidden');
+        showNotification('Note exported as Markdown (sample)');
+      }
+      
+      // Utility Functions
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString();
+      }
+      
+      function showNotification(message) {
+        notificationToast.textContent = message;
+        notificationToast.classList.remove('hidden');
+        
+        setTimeout(() => {
+          notificationToast.classList.add('hidden');
+        }, 3000);
+      }
+      
+      function clearEditor() {
+        if (appState.currentNoteId) {
+          // If editing an existing note, reload it to discard changes
+          const note = appState.notes.find(note => note.id === appState.currentNoteId);
+          if (note) {
+            noteTitle.value = note.title;
+            noteTags.value = note.tags.join(', ');
+            easyMDE.value(note.content);
+          }
+        } else {
+          // If creating a new note, clear everything
+          noteTitle.value = '';
+          noteTags.value = '';
+          easyMDE.value('');
+        }
+        updateWordCount();
+      }
+      
+      // AI Simulation Functions
+      function simulateAIProcessing(content, action, customPrompt) {
+        if (!content) return 'No content to process';
+        
+        // These functions simulate AI processing results
+        switch (action) {
+          case 'summarize':
+            return `## Summary\n\nThis note discusses ${getRandomTopic(content)}. The main points include:\n\n- ${getRandomPoint(content)}\n- ${getRandomPoint(content)}\n- ${getRandomPoint(content)}\n\nKey insights: ${getRandomInsight(content)}`;
+          
+          case 'expand':
+            return `## Expanded Thoughts\n\nBuilding on your note about ${getRandomTopic(content)}, here are some additional ideas to consider:\n\n### Deeper Analysis\n${getRandomParagraph(content)}\n\n### Additional Perspectives\n${getRandomParagraph(content)}\n\n### Related Concepts\n${getRandomParagraph(content)}`;
+          
+          case 'research':
+            return `## Research Findings\n\nBased on your interest in ${getRandomTopic(content)}, here's what current research suggests:\n\n### Current State\n${getRandomParagraph(content)}\n\n### Key Studies\n- Study by ${getRandomName()} (${getRandomYear()}): ${getRandomInsight(content)}\n- Analysis from ${getRandomName()} (${getRandomYear()}): ${getRandomInsight(content)}\n\n### Practical Applications\n${getRandomParagraph(content)}`;
+          
+          case 'brainstorm':
+            return `## Brainstorming Results\n\n### Related Ideas\n- ${getRandomIdea(content)}\n- ${getRandomIdea(content)}\n- ${getRandomIdea(content)}\n\n### Potential Projects\n- ${getRandomProject(content)}\n- ${getRandomProject(content)}\n\n### Questions to Explore\n- ${getRandomQuestion(content)}\n- ${getRandomQuestion(content)}\n- ${getRandomQuestion(content)}`;
+          
+          case 'rewrite':
+            return `## Rewritten Content\n\n${getRandomParagraph(content)}\n\n${getRandomParagraph(content)}\n\n${getRandomParagraph(content)}\n\nThe key point to remember is that ${getRandomInsight(content)}.`;
+          
+          case 'analyze':
+            return `## Analysis\n\n### Main Themes\n- ${getRandomTopic(content)}\n- ${getRandomTopic(content)}\n\n### Strengths\n- ${getRandomPoint(content)}\n- ${getRandomPoint(content)}\n\n### Areas for Development\n- Consider exploring ${getRandomIdea(content)}\n- The connection between ${getRandomTopic(content)} and ${getRandomTopic(content)} could be stronger\n\n### Overall Assessment\nThis note presents a ${['compelling', 'thoughtful', 'interesting', 'innovative', 'comprehensive'][Math.floor(Math.random() * 5)]} perspective on ${getRandomTopic(content)}.`;
+          
+          case 'enhance':
+            return `# ${getEnhancedTitle(content)}\n\n## Introduction\n${getRandomParagraph(content)}\n\n## Key Insights\n- ${getRandomPoint(content)}\n- ${getRandomPoint(content)}\n- ${getRandomPoint(content)}\n\n## Detailed Analysis\n${getRandomParagraph(content)}\n\n### Supporting Evidence\n${getRandomParagraph(content)}\n\n## Conclusion\n${getRandomInsight(content)}`;
+          
+          default:
+            return content;
+        }
+      }
+      
+      function simulateAIResponse(query) {
+        const responses = [
+          `That's an interesting question about ${query}. Based on my understanding, ${getRandomParagraph(query)}`,
+          `When considering ${query}, it's important to note that ${getRandomInsight(query)}. This leads to several implications: ${getRandomPoint(query)} and ${getRandomPoint(query)}.`,
+          `${query} relates to ${getRandomTopic(query)}. From a philosophical perspective, ${getRandomParagraph(query)}`,
+          `I can help with that. ${query} involves ${getRandomParagraph(query)}. Would you like me to elaborate further on any specific aspect?`,
+          `Looking at ${query} from multiple angles: Historically, ${getRandomPoint(query)}. Scientifically, ${getRandomPoint(query)}. Philosophically, ${getRandomInsight(query)}.`
+        ];
+        
+        return responses[Math.floor(Math.random() * responses.length)];
+      }
+      
+      function simulateTagSuggestions(content) {
+        // Generate some random tags based on content
+        const possibleTags = [
+          'philosophy', 'productivity', 'research', 'ideas', 'projects',
+          'learning', 'knowledge', 'notes', 'thoughts', 'concepts',
+          'questions', 'insights', 'reflection', 'analysis', 'theory',
+          'practice', 'methods', 'systems', 'critique', 'review'
+        ];
+        
+        // Select 4-7 random tags
+        const numTags = 4 + Math.floor(Math.random() * 4);
+        const shuffled = [...possibleTags].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, numTags);
+      }
+      
+      function simulateWebSearch(query) {
+        // Simulate web search results
+        return [
+          {
+            title: `Understanding ${query} - A Comprehensive Guide`,
+            url: `https://example.com/guides/${query.toLowerCase().replace(/\s+/g, '-')}`,
+            snippet: `This comprehensive guide explores ${query} in detail, covering its history, key concepts, and practical applications. Learn how to master ${query} with expert tips and strategies.`
+          },
+          {
+            title: `${query} - Wikipedia`,
+            url: `https://en.wikipedia.org/wiki/${query.toLowerCase().replace(/\s+/g, '_')}`,
+            snippet: `${query} is a ${['concept', 'methodology', 'theory', 'practice', 'field of study'][Math.floor(Math.random() * 5)]} that emerged in the ${getRandomYear()}s. It encompasses various aspects including ${getRandomTopic(query)} and ${getRandomTopic(query)}.`
+          },
+          {
+            title: `Latest Research on ${query}`,
+            url: `https://journal.academia.edu/research/${query.toLowerCase().replace(/\s+/g, '-')}`,
+            snippet: `Recent studies by ${getRandomName()} show that ${query} has significant implications for ${getRandomTopic(query)}. The research highlights ${getRandomInsight(query)}.`
+          },
+          {
+            title: `How to Apply ${query} in Your Daily Life`,
+            url: `https://practicalwisdom.com/${query.toLowerCase().replace(/\s+/g, '-')}-applications`,
+            snippet: `This article presents practical ways to incorporate ${query} into your daily routine. Learn how ${query} can enhance your ${['productivity', 'wellbeing', 'understanding', 'relationships', 'work'][Math.floor(Math.random() * 5)]}.`
+          }
+        ];
+      }
+      
+      function simulateReportGeneration(content) {
+        return `# Comprehensive Report on ${getRandomTopic(content)}
+
+## Executive Summary
+${getRandomParagraph(content)}
+
+## Background
+${getRandomParagraph(content)}
+
+### Historical Context
+${getRandomParagraph(content)}
+
+## Current State of Knowledge
+${getRandomParagraph(content)}
+
+### Key Findings
+1. ${getRandomPoint(content)}
+2. ${getRandomPoint(content)}
+3. ${getRandomPoint(content)}
+
+## Analysis
+${getRandomParagraph(content)}
+
+### Strengths and Limitations
+**Strengths:**
+- ${getRandomPoint(content)}
+- ${getRandomPoint(content)}
+
+**Limitations:**
+- ${getRandomPoint(content)}
+- ${getRandomPoint(content)}
+
+## Practical Applications
+${getRandomParagraph(content)}
+
+### Case Studies
+1. **${getRandomName()} (${getRandomYear()})** - ${getRandomInsight(content)}
+2. **${getRandomName()} (${getRandomYear()})** - ${getRandomInsight(content)}
+
+## Future Directions
+${getRandomParagraph(content)}
+
+### Emerging Trends
+- ${getRandomIdea(content)}
+- ${getRandomIdea(content)}
+- ${getRandomIdea(content)}
+
+## Conclusions
+${getRandomParagraph(content)}
+
+## References
+1. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(content)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}), ${Math.floor(Math.random() * 100) + 100}-${Math.floor(Math.random() * 100) + 200}.
+2. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(content)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}), ${Math.floor(Math.random() * 100) + 100}-${Math.floor(Math.random() * 100) + 200}.
+3. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(content)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}), ${Math.floor(Math.random() * 100) + 100}-${Math.floor(Math.random() * 100) + 200}.
+`;
+      }
+      
+      function simulateDeepResearch(query) {
+        return `# Deep Research: ${query}
+
+## Comprehensive Analysis
+
+### Overview
+${getRandomParagraph(query)}
+
+### Historical Development
+${getRandomParagraph(query)}
+
+In ${getRandomYear()}, ${getRandomName()} pioneered work in this area, establishing the foundational principles that continue to influence modern thinking.
+
+### Current State of Knowledge
+${getRandomParagraph(query)}
+
+### Key Perspectives
+
+#### Perspective 1: ${getRandomTopic(query)}
+${getRandomParagraph(query)}
+
+#### Perspective 2: ${getRandomTopic(query)}
+${getRandomParagraph(query)}
+
+### Critical Evaluation
+${getRandomParagraph(query)}
+
+## Synthesis of Research
+
+### Key Findings
+1. ${getRandomPoint(query)}
+2. ${getRandomPoint(query)}
+3. ${getRandomPoint(query)}
+4. ${getRandomPoint(query)}
+
+### Interconnections
+${getRandomParagraph(query)}
+
+### Research Gaps
+${getRandomParagraph(query)}
+
+## Practical Applications
+
+### Contemporary Uses
+${getRandomParagraph(query)}
+
+### Future Potential
+${getRandomParagraph(query)}
+
+## Conclusion
+${getRandomParagraph(query)}
+
+## Sources
+1. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(query)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}).
+2. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(query)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}).
+3. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(query)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}).
+4. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(query)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}).
+5. ${getRandomName()} (${getRandomYear()}). "${getRandomTitle()}". Journal of ${getRandomTopic(query)}, ${Math.floor(Math.random() * 30) + 1}(${Math.floor(Math.random() * 12) + 1}).
+`;
+      }
+      
+      // Helper functions for generating random content
+      function getRandomTopic(seed) {
+        const topics = [
+          'knowledge management', 'artificial intelligence', 'cognitive science',
+          'productivity systems', 'information architecture', 'digital philosophy',
+          'note-taking methodologies', 'personal knowledge bases', 'semantic networks',
+          'idea synthesis', 'conceptual frameworks', 'intellectual exploration'
+        ];
+        return topics[Math.floor(Math.random() * topics.length)];
+      }
+      
+      function getRandomPoint(seed) {
+        const points = [
+          'connecting ideas across disciplines creates new insights',
+          'systematic organization improves retrieval and application of knowledge',
+          'visual representation of concepts enhances understanding',
+          'regular review and refinement of notes leads to deeper comprehension',
+          'contextualizing information within existing knowledge frameworks',
+          'identifying patterns across seemingly unrelated domains',
+          'questioning assumptions leads to breakthrough thinking',
+          'structured reflection enhances learning outcomes',
+          'balancing breadth and depth of knowledge acquisition',
+          'systems thinking applied to personal knowledge management'
+        ];
+        return points[Math.floor(Math.random() * points.length)];
+      }
+      
+      function getRandomInsight(seed) {
+        const insights = [
+          'the integration of diverse perspectives leads to more robust solutions',
+          'metacognitive awareness significantly improves learning outcomes',
+          'knowledge systems require regular maintenance and curation',
+          'emergent properties arise from well-connected information networks',
+          'personal knowledge management is fundamentally about making better decisions',
+          'the externalization of thought processes reduces cognitive load',
+          'intellectual growth occurs at the boundaries between knowledge domains',
+          'effective note-taking is a form of structured thinking',
+          'digital tools should enhance, not replace, cognitive processes',
+          'the value of information is proportional to its connectedness'
+        ];
+        return insights[Math.floor(Math.random() * insights.length)];
+      }
+      
+      function getRandomParagraph(seed) {
+        const paragraphs = [
+          `The development of systematic approaches to knowledge management represents a significant advancement in how we process and internalize information. By establishing structured frameworks for capturing, organizing, and retrieving ideas, we create external cognitive architectures that extend our natural thinking capabilities. This externalization allows for more complex thought processes and deeper connections between concepts that might otherwise remain isolated.`,
+          
+          `When examining the intersection of technology and cognition, we observe a co-evolutionary relationship where digital tools both shape and are shaped by human thought patterns. The design of knowledge management systems therefore requires careful consideration of cognitive ergonomics—how well the system aligns with natural thought processes while simultaneously extending cognitive capabilities beyond their biological limitations.`,
+          
+          `The concept of networked thought provides a powerful metaphor for understanding how ideas develop and evolve. Rather than viewing knowledge as a hierarchical structure, the network model emphasizes connections, relationships, and emergent properties that arise from the interaction between discrete pieces of information. This perspective encourages a more fluid and adaptive approach to knowledge work.`,
+          
+          `Effective note-taking transcends mere information capture; it represents a form of active thinking through which we process, refine, and extend our understanding. By externalizing our thoughts through writing, we create opportunities for reflection, revision, and recombination that would be difficult or impossible to achieve through internal contemplation alone.`,
+          
+          `The digital knowledge ecosystem introduces new possibilities and challenges for information management. While we gain unprecedented capabilities for storing and retrieving vast quantities of information, we must also develop new skills and practices to avoid cognitive overload. Strategic approaches to filtering, contextualizing, and connecting information become essential in maintaining intellectual clarity and focus.`
+        ];
+        return paragraphs[Math.floor(Math.random() * paragraphs.length)];
+      }
+      
+      function getRandomIdea(seed) {
+        const ideas = [
+          'developing a personal semantic wiki for interconnected knowledge',
+          'implementing spaced repetition for key insights and principles',
+          'creating visual concept maps to identify knowledge gaps',
+          'establishing daily reflection practices for knowledge integration',
+          'designing a system for cross-referencing physical and digital notes',
+          'exploring the use of generative AI for knowledge synthesis',
+          'developing custom taxonomies for personal interests and projects',
+          'creating templates for different types of intellectual work',
+          'establishing protocols for knowledge validation and verification',
+          'integrating embodied cognition principles into note-taking practices'
+        ];
+        return ideas[Math.floor(Math.random() * ideas.length)];
+      }
+      
+      function getRandomProject(seed) {
+        const projects = [
+          'build a custom knowledge management system with automated connections',
+          'create a digital garden showcasing interconnected ideas and explorations',
+          'develop a personal research methodology for complex topics',
+          'establish a systematic review process for academic literature',
+          'design a workshop on effective note-taking and idea synthesis',
+          'create visualization tools for personal knowledge networks',
+          'develop frameworks for translating abstract concepts into practical applications',
+          'build an augmented reading system with integrated note-taking',
+          'establish a collaborative knowledge base for a specific domain',
+          'design experiments to test knowledge retention and application methods'
+        ];
+        return projects[Math.floor(Math.random() * projects.length)];
+      }
+      
+      function getRandomQuestion(seed) {
+        const questions = [
+          'How might we measure the effectiveness of different note-taking methods?',
+          'What cognitive biases most significantly impact knowledge organization?',
+          'How can we better integrate embodied knowledge into digital systems?',
+          'What are the ethical implications of AI-assisted knowledge management?',
+          'How does the medium of note-taking influence the content and connections?',
+          'What can we learn from historical knowledge management systems?',
+          'How do different visualization techniques affect understanding?',
+          'What role does serendipity play in knowledge discovery?',
+          'How can we balance structure and flexibility in knowledge systems?',
+          'What are the longitudinal effects of externalized thinking?'
+        ];
+        return questions[Math.floor(Math.random() * questions.length)];
+      }
+      
+      function getRandomName() {
+        const firstNames = ['Michael', 'Sarah', 'David', 'Emily', 'Robert', 'Jennifer', 'Daniel', 'Lisa', 'Thomas', 'Elizabeth'];
+        const lastNames = ['Johnson', 'Smith', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
+        return `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`;
+      }
+      
+      function getRandomYear() {
+        return 1990 + Math.floor(Math.random() * 33); // 1990-2023
+      }
+      
+      function getRandomTitle() {
+        const beginnings = ['Advances in', 'Exploring', 'Theoretical Frameworks for', 'A New Approach to', 'Understanding', 'Critical Perspectives on'];
+        const middles = ['Digital', 'Cognitive', 'Philosophical', 'Practical', 'Systematic', 'Integrative'];
+        const endings = ['Knowledge Management', 'Information Processing', 'Note-Taking Systems', 'Idea Development', 'Conceptual Networks', 'Learning Methodologies'];
+        
+        return `${beginnings[Math.floor(Math.random() * beginnings.length)]} ${middles[Math.floor(Math.random() * middles.length)]} ${endings[Math.floor(Math.random() * endings.length)]}`;
+      }
+      
+      function getEnhancedTitle(content) {
+        const titles = [
+          'The Art and Science of Knowledge Management',
+          'Digital Gardens: Cultivating Ideas in the Information Age',
+          'Networked Thought: Beyond Linear Note-Taking',
+          'From Information to Wisdom: A Journey Through Knowledge Systems',
+          'The Architecture of Ideas: Building Personal Knowledge Frameworks'
+        ];
+        return titles[Math.floor(Math.random() * titles.length)];
+      }
+      
+      // Initialize the application
+      init();
+    });
+  </script>
+</body>
+</html>

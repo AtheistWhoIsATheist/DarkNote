@@ -1,0 +1,491 @@
+Here it is.
+
+This is the definitive, professional, single-file version of the Nihiltheism Research Platform. It integrates the full power of the modular architecture into one self-contained file that is easy to save and use, without compromising on quality or functionality.
+
+Simply save this entire code block as a single file named `Nihiltheism_PKM.html` and open it in a modern web browser.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nihiltheism Research Platform</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" integrity="sha384-sN/2sCRNEZEA/egfeNdaS2nB0/I1+fIoShD/H8rU1YSmAct21jLCoE/PecKjy99D" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" integrity="sha384-hIoYJkEuEokHuB6qAPdRunr1v3B2UdZmqn22Ctt2otPAcrnB2epYlQ9XCFbL1evE" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #ff6b6b;
+            --secondary-color: #4ecdc4;
+            --background-gradient: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            --text-color: #e8e8e8;
+            --panel-bg: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 107, 107, 0.2);
+            --tag-bg: rgba(255, 167, 38, 0.2);
+            --tag-color: #ffa726;
+            --tag-border: rgba(255, 167, 38, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: var(--background-gradient);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .app-container { display: flex; height: 100vh; }
+        .sidebar { width: 300px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); border-right: 1px solid var(--border-color); padding: 20px; overflow-y: auto; transition: width 0.3s ease; position: relative; }
+        .sidebar.collapsed { width: 70px; }
+        .sidebar-toggle { position: absolute; top: 15px; right: 15px; background: rgba(255, 107, 107, 0.2); border: none; color: var(--primary-color); padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease; z-index: 10; }
+        .sidebar-toggle:hover { background: rgba(255, 107, 107, 0.3); transform: scale(1.05); }
+        .nav-section { margin-bottom: 25px; }
+        .nav-title { color: var(--primary-color); font-size: 0.9rem; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 1; transition: opacity 0.3s ease; white-space: nowrap; }
+        .sidebar.collapsed .nav-title { opacity: 0; }
+        .nav-item { display: flex; align-items: center; padding: 12px 15px; margin-bottom: 6px; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; color: #b8b8b8; position: relative; white-space: nowrap; }
+        .nav-item:hover, .nav-item.active { background: rgba(255, 107, 107, 0.15); color: var(--primary-color); transform: translateX(5px); box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2); }
+        .nav-icon { width: 20px; height: 20px; margin-right: 12px; opacity: 0.8; font-size: 16px; flex-shrink: 0; }
+        .nav-text { opacity: 1; transition: opacity 0.3s ease; }
+        .sidebar.collapsed .nav-text { opacity: 0; }
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header-bar { background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border-color); padding: 18px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); }
+        .header-title { color: var(--primary-color); font-size: 1.6rem; font-weight: 300; letter-spacing: 2px; }
+        .header-controls { display: flex; gap: 15px; align-items: center; }
+        .search-bar { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 107, 107, 0.3); border-radius: 25px; padding: 10px 22px; color: var(--text-color); width: 320px; outline: none; transition: all 0.3s ease; font-size: 0.95rem; }
+        .search-bar:focus { border-color: var(--secondary-color); box-shadow: 0 0 15px rgba(78, 205, 196, 0.3); width: 360px; }
+        .content-area { flex: 1; padding: 30px; overflow-y: auto; }
+        .panel { background: var(--panel-bg); border-radius: 15px; padding: 25px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); transition: all 0.3s ease; position: relative; overflow: hidden; margin-bottom: 25px; }
+        .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border-color); }
+        .panel-title { color: var(--primary-color); font-size: 1.4rem; font-weight: 400; }
+        .panel-controls { display: flex; gap: 12px; align-items: center; }
+        .btn { background: linear-gradient(135deg, #ff6b6b, #4ecdc4); color: white; border: none; padding: 10px 18px; border-radius: 25px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease; font-weight: 500; }
+        .btn:hover { transform: translateY(-2px) scale(1.05); box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4); }
+        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: #b8b8b8; }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.2); color: #e8e8e8; box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1); }
+        .affirmation-display { background: linear-gradient(135deg, rgba(255, 107, 107, 0.2) 0%, rgba(78, 205, 196, 0.2) 100%); padding: 30px; border-radius: 15px; text-align: center; font-size: 1.2rem; font-style: italic; border: 2px solid rgba(255, 107, 107, 0.3); line-height: 1.7; }
+        .catalyst-address { background: rgba(0, 0, 0, 0.3); padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .notes-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 18px; }
+        .note-item { background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 12px; border-left: 4px solid var(--tag-color); transition: all 0.3s ease; cursor: pointer; display: flex; flex-direction: column; }
+        .note-item:hover { background: rgba(0, 0, 0, 0.3); transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); }
+        .note-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .note-title { color: var(--tag-color); font-weight: bold; font-size: 1.1rem; }
+        .note-date { color: #a8a8a8; font-size: 0.85rem; flex-shrink: 0; margin-left: 1em; }
+        .note-tags { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .tag { background: var(--tag-bg); color: var(--tag-color); padding: 4px 10px; border-radius: 15px; font-size: 0.8rem; border: 1px solid var(--tag-border); }
+        .note-content-preview { color: #d8d8d8; line-height: 1.6; flex-grow: 1; overflow: hidden; mask-image: linear-gradient(to bottom, black 50%, transparent 100%);}
+        .note-content-full { color: #d8d8d8; line-height: 1.7; }
+        .note-content-full h1, .note-content-full h2, .note-content-full h3 { color: var(--secondary-color); margin: 1.5em 0 0.5em; border-bottom: 1px solid rgba(78, 205, 196, 0.2); padding-bottom: 0.3em; }
+        .note-content-full p { margin-bottom: 1em; }
+        .note-content-full a { color: var(--primary-color); text-decoration: none; border-bottom: 1px dashed var(--primary-color); transition: all 0.2s ease; }
+        .note-content-full a:hover { background-color: rgba(255, 107, 107, 0.1); border-bottom-style: solid; }
+        .note-content-full blockquote { border-left: 3px solid var(--secondary-color); margin: 1.5em 1em; padding-left: 1em; color: #ccc; font-style: italic; }
+        .note-content-full code { background: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; }
+        .note-content-full pre > code { display: block; padding: 1em; }
+        .backlinks-container { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .backlinks-title { color: var(--secondary-color); margin-bottom: 15px; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
+        .modal.active { display: flex; opacity: 1; }
+        .modal-content { background: rgba(26, 26, 46, 0.95); border-radius: 20px; padding: 35px; max-width: 800px; width: 90%; border: 1px solid var(--border-color); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); transform: scale(0.9); transition: transform 0.3s ease; display: flex; flex-direction: column; max-height: 90vh; }
+        .modal.active .modal-content { transform: scale(1); }
+        .modal-header { color: var(--primary-color); font-size: 1.5rem; margin-bottom: 25px; text-align: center; flex-shrink: 0; }
+        #modalFormContent { overflow-y: auto; flex-grow: 1; }
+        .form-group { margin-bottom: 22px; }
+        .form-label { display: block; color: var(--secondary-color); margin-bottom: 8px; font-weight: bold; }
+        .form-input, .form-textarea { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; color: var(--text-color); outline: none; transition: all 0.3s ease; font-size: 1rem; font-family: 'Georgia', serif; }
+        .form-textarea { resize: vertical; min-height: 250px; line-height: 1.6; }
+        .form-input:focus, .form-textarea:focus { border-color: var(--secondary-color); box-shadow: 0 0 15px rgba(78, 205, 196, 0.3); }
+        .modal-actions { display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px; flex-shrink: 0; }
+        .floating-action { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background: linear-gradient(135deg, #ff6b6b, #4ecdc4); border: none; border-radius: 50%; color: white; font-size: 1.5rem; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 107, 107, 0.4); transition: all 0.3s ease; z-index: 100; }
+        .floating-action:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 6px 30px rgba(255, 107, 107, 0.6); }
+        .empty-state { text-align: center; color: #a8a8a8; font-style: italic; padding: 40px; background: rgba(255, 255, 255, 0.02); border-radius: 12px; border: 2px dashed rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar" id="sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            <div class="nav-section">
+                <div class="nav-title">Dashboard</div>
+                <div class="nav-item active" data-section="dashboard"><span class="nav-icon">📊</span><span class="nav-text">Overview</span></div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">Knowledge Base</div>
+                <div class="nav-item" data-section="notes"><span class="nav-icon">📝</span><span class="nav-text">Notes</span></div>
+                <div class="nav-item" data-section="graph"><span class="nav-icon">🔗</span><span class="nav-text">Knowledge Graph</span></div>
+            </div>
+            <div class="nav-section">
+                <div class="nav-title">Tools & Analysis</div>
+                <div class="nav-item" data-section="catalyst"><span class="nav-icon">🎯</span><span class="nav-text">Daily Catalyst</span></div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="header-bar">
+                <div class="header-title" id="headerTitle">Nihiltheism Research Platform</div>
+                <div class="header-controls">
+                    <input type="text" class="search-bar" placeholder="Filter notes by title or content..." id="globalSearch">
+                    <button class="btn" id="addButton">+ Add Note</button>
+                </div>
+            </div>
+            <div class="content-area" id="contentArea"></div>
+        </div>
+    </div>
+    
+    <button class="floating-action" id="quickAddButton" title="Quick Add Note">+</button>
+    
+    <div class="modal" id="formModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle"></div>
+            <div id="modalFormContent"></div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelButton">Cancel</button>
+                <button class="btn" id="saveButton">💾 Save Item</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        // --- 1. APPLICATION STATE ---
+        const state = {
+            notes: [],
+            currentSection: 'dashboard',
+            activeNoteId: null,
+            searchTerm: '',
+        };
+
+        // --- 2. UTILITY FUNCTIONS ---
+        const Utils = {
+            uuid: () => ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)),
+            formatDate: (dateStr) => new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            parseContent: (text = '') => {
+                let processedText = text.replace(/\[\[(.*?)\]\]/g, `<a href="#" class="internal-link" data-link-title="$1">$1</a>`);
+                try {
+                    return marked.parse(processedText);
+                } catch (e) {
+                    console.error("Markdown parsing error:", e);
+                    return text; // Return original text on error
+                }
+            }
+        };
+
+        // --- 3. DATABASE (localStorage Abstraction) ---
+        const Database = {
+            DB_KEY: 'nihiltheism_pkm_data_v3',
+            init() {
+                const data = localStorage.getItem(this.DB_KEY);
+                if (data) {
+                    state.notes = JSON.parse(data).notes || [];
+                } else {
+                    state.notes = this.getSampleData();
+                }
+                this.save();
+            },
+            save() {
+                localStorage.setItem(this.DB_KEY, JSON.stringify({ notes: state.notes }));
+            },
+            addItem(itemData) {
+                const newItem = { id: Utils.uuid(), createdAt: new Date().toISOString(), ...itemData, updatedAt: new Date().toISOString() };
+                state.notes.push(newItem);
+                this.save();
+                return newItem;
+            },
+            updateItem(id, updates) {
+                const itemIndex = state.notes.findIndex(item => item.id === id);
+                if (itemIndex > -1) {
+                    state.notes[itemIndex] = { ...state.notes[itemIndex], ...updates, updatedAt: new Date().toISOString() };
+                    this.save();
+                }
+            },
+            deleteItem(id) {
+                state.notes = state.notes.filter(item => item.id !== id);
+                this.save();
+            },
+            getItem(id) {
+                return state.notes.find(n => n.id === id);
+            },
+            getSampleData: () => ([
+                { id: Utils.uuid(), title: 'Welcome to Your PKM', content: `This is your new **Personal Knowledge Management** system, built as a single, powerful file.\n\n### Features:\n- Use **Markdown** for rich formatting.\n- Render LaTeX for philosophy: $E=mc^2$ or more complex statements like $\\forall x (\\Phi(x) \\rightarrow \\Psi(x))$.\n- Link to other notes by title: [[Ontodicy Collapse Argument]]\n- Explore connections in the **Knowledge Graph**.\n\nStart by editing this note or creating a new one.`, tags: ['welcome', 'guide'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+                { id: Utils.uuid(), title: 'Ontodicy Collapse Argument', content: 'The core argument posits that any attempt to justify Being-itself (an **ontodicy**) inevitably collapses under the weight of its own presuppositions. It relies on a framework of meaning that it cannot, itself, ground.\n\n> The serpent eats its own tail, but in this case, the serpent is logic and the tail is its foundation.', tags: ['nihiltheism', 'core-concept', 'metaphysics'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+            ])
+        };
+
+        // --- 4. UI COMPONENT FACTORY ---
+        const UI = {
+            contentArea: document.getElementById('contentArea'),
+            modal: document.getElementById('formModal'),
+            modalTitle: document.getElementById('modalTitle'),
+            modalFormContent: document.getElementById('modalFormContent'),
+            
+            createElement(tag, classes, content) {
+                const el = document.createElement(tag);
+                if (classes) el.className = Array.isArray(classes) ? classes.join(' ') : classes;
+                if (content) {
+                    if (typeof content === 'string') el.innerHTML = content;
+                    else el.appendChild(content);
+                }
+                return el;
+            },
+            
+            createNoteCard(note) {
+                const noteItem = this.createElement('div', 'note-item');
+                noteItem.dataset.id = note.id;
+                const previewText = note.content.substring(0, 200) + (note.content.length > 200 ? '...' : '');
+                noteItem.innerHTML = `
+                    <div class="note-header">
+                        <div class="note-title">${note.title}</div>
+                        <div class="note-date">${Utils.formatDate(note.updatedAt)}</div>
+                    </div>
+                    <div class="note-tags">${note.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}</div>
+                    <div class="note-content-preview">${Utils.parseContent(previewText)}</div>
+                `;
+                return noteItem;
+            },
+
+            createNoteDetail(note) {
+                const panel = this.createElement('div', 'panel');
+                const backlinkRegex = /\[\[(.*?)\]\]/g;
+                const linkingNotes = state.notes.filter(n => n.id !== note.id && [...n.content.matchAll(backlinkRegex)].some(match => match[1] === note.title));
+                
+                let backlinksHTML = '';
+                if (linkingNotes.length > 0) {
+                    backlinksHTML = `
+                        <div class="backlinks-container">
+                            <h3 class="backlinks-title">Linked References (${linkingNotes.length})</h3>
+                            <ul class="backlinks-list">
+                                ${linkingNotes.map(n => `<li><a href="#" class="internal-link" data-link-title="${n.title}">${n.title}</a></li>`).join('')}
+                            </ul>
+                        </div>`;
+                }
+
+                panel.innerHTML = `
+                    <div class="panel-header">
+                        <h2 class="panel-title">${note.title}</h2>
+                        <div class="panel-controls">
+                            <button class="btn" data-action="edit" data-id="${note.id}">Edit Note</button>
+                            <button class="btn btn-secondary" data-action="delete" data-id="${note.id}">Delete</button>
+                        </div>
+                    </div>
+                    <div class="note-content-full">${Utils.parseContent(note.content)}</div>
+                    ${backlinksHTML}
+                `;
+                // KaTeX rendering must happen after innerHTML is set
+                window.renderMathInElement(panel, { delimiters: [{left: "$", right: "$", display: false}, {left: "$$", right: "$$", display: true}] });
+                return panel;
+            },
+
+            createNoteForm(note = {}) {
+                this.modalTitle.textContent = note.id ? 'Edit Philosophical Note' : 'Add New Philosophical Note';
+                this.modalFormContent.innerHTML = `
+                    <div class="form-group">
+                        <label class="form-label" for="noteTitle">Title</label>
+                        <input class="form-input" type="text" id="noteTitle" placeholder="Enter the philosophical concept..." value="${note.title || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="noteContent">Content (Markdown & LaTeX supported)</label>
+                        <textarea class="form-textarea" id="noteContent" placeholder="Use [[links]], $LaTeX$, and **Markdown**.">${note.content || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="noteTags">Tags (comma-separated)</label>
+                        <input class="form-input" type="text" id="noteTags" placeholder="philosophy, core-concept, ..." value="${(note.tags || []).join(', ')}">
+                    </div>
+                `;
+                document.getElementById('saveButton').onclick = () => App.handleSaveNote(note.id || null);
+                this.modal.classList.add('active');
+            }
+        };
+
+        // --- 5. APPLICATION LOGIC & RENDERERS ---
+        const App = {
+            init() {
+                Database.init();
+                this.setupEventListeners();
+                this.render(state.currentSection);
+                console.log("Nihiltheism PKM Initialized.");
+            },
+
+            render(sectionName) {
+                state.currentSection = sectionName;
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.section === sectionName));
+                const renderer = {
+                    dashboard: this.renderDashboard,
+                    notes: this.renderNotesList,
+                    graph: this.renderKnowledgeGraph,
+                    catalyst: this.renderCatalyst
+                };
+                UI.contentArea.innerHTML = '';
+                (renderer[sectionName] || this.renderDashboard)();
+            },
+
+            renderDashboard() {
+                const panel = UI.createElement('div', 'panel');
+                panel.innerHTML = `
+                    <div class="panel-header"><h2 class="panel-title">📊 Dashboard</h2></div>
+                    <p>Welcome to the research platform. You currently have <strong>${state.notes.length}</strong> notes in your knowledge base.</p>
+                    <p>Use the navigation to explore your ideas or create a new note to begin.</p>`;
+                const affirmationPanel = UI.createElement('div', 'panel');
+                affirmationPanel.innerHTML = `<div class="panel-header"><h2 class="panel-title">🌟 Daily Affirmation</h2></div>
+                <div class="affirmation-display">I embrace the fertile darkness of unknowing as the ground from which authentic understanding emerges.</div>`;
+                UI.contentArea.append(panel, affirmationPanel);
+            },
+
+            renderCatalyst() {
+                UI.contentArea.innerHTML = `<div class="panel"><div class="panel-header"><h2 class="panel-title">🎯 Daily Research Catalyst</h2></div>
+                <div class="catalyst-address"><strong>Professor Nihil addresses you:</strong><br><br><span>"The void you excavate reveals not emptiness, but the fertile darkness from which authentic understanding springs. Today's vectors point toward synthesis, where negation and affirmation meet."</span></div></div>`;
+            },
+
+            renderNotesList() {
+                const filteredNotes = state.notes.filter(note => 
+                    note.title.toLowerCase().includes(state.searchTerm) || note.content.toLowerCase().includes(state.searchTerm)
+                );
+                
+                if (filteredNotes.length === 0 && state.searchTerm === '') {
+                    UI.contentArea.innerHTML = `<div class="empty-state">No notes yet. Create one to begin your intellectual journey.</div>`;
+                    return;
+                }
+                const container = UI.createElement('div', 'notes-container');
+                filteredNotes
+                    .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                    .forEach(note => container.appendChild(UI.createNoteCard(note)));
+                UI.contentArea.appendChild(container);
+
+                if (filteredNotes.length === 0 && state.searchTerm !== '') {
+                     UI.contentArea.innerHTML = `<div class="empty-state">No notes found for "${state.searchTerm}".</div>`;
+                }
+            },
+
+            renderNoteDetail(noteId) {
+                state.activeNoteId = noteId;
+                const note = Database.getItem(noteId);
+                if (note) {
+                    UI.contentArea.innerHTML = '';
+                    UI.contentArea.appendChild(UI.createNoteDetail(note));
+                } else {
+                    this.renderNotesList(); // Fallback if note not found
+                }
+            },
+
+            renderKnowledgeGraph() {
+                const panel = UI.createElement('div', 'panel');
+                panel.innerHTML = `<div class="panel-header"><h2 class="panel-title">🔗 Knowledge Graph</h2></div>`;
+                const graphContainer = UI.createElement('div', 'knowledge-graph-container');
+                graphContainer.style.height = '70vh';
+                graphContainer.style.border = '1px solid var(--border-color)';
+                panel.appendChild(graphContainer);
+                UI.contentArea.appendChild(panel);
+
+                const nodes = state.notes.map(n => ({ id: n.id, label: n.title, title: n.tags.join(', ') }));
+                const edges = [];
+                const backlinkRegex = /\[\[(.*?)\]\]/g;
+                state.notes.forEach(note => {
+                    const matches = [...note.content.matchAll(backlinkRegex)];
+                    matches.forEach(match => {
+                        const targetNote = state.notes.find(n => n.title === match[1]);
+                        if(targetNote) {
+                            edges.push({ from: note.id, to: targetNote.id, arrows: 'to' });
+                        }
+                    });
+                });
+                
+                new vis.Network(graphContainer, { nodes, edges }, { 
+                    nodes:{ shape: 'dot', size: 16, font:{color: 'var(--text-color)'}, borderWidth: 2, color:{border:'#4ecdc4',background:'#1a1a2e',highlight:{border:'#ff6b6b'},hover:{border:'#ff6b6b'}}}, 
+                    edges:{ color: 'rgba(255,107,107,0.4)'},
+                    physics: { stabilization: false, barnesHut: { gravitationalConstant: -8000, springConstant: 0.04, springLength: 95 } }
+                }).on("click", params => {
+                    if (params.nodes.length > 0) {
+                        this.render('notes'); // Switch view
+                        this.renderNoteDetail(params.nodes[0]);
+                    }
+                });
+            },
+
+            // --- 6. EVENT HANDLING ---
+            handleSaveNote(noteId) {
+                const data = {
+                    title: document.getElementById('noteTitle').value.trim(),
+                    content: document.getElementById('noteContent').value,
+                    tags: document.getElementById('noteTags').value.split(',').map(t => t.trim()).filter(Boolean)
+                };
+                if (!data.title) return alert('Title is required.');
+                
+                let newNoteId;
+                if (noteId) {
+                    Database.updateItem(noteId, data);
+                } else {
+                    const newNote = Database.addItem(data);
+                    newNoteId = newNote.id;
+                }
+                
+                UI.modal.classList.remove('active');
+                this.render('notes');
+                this.renderNoteDetail(noteId || newNoteId);
+            },
+
+            setupEventListeners() {
+                document.getElementById('sidebar').addEventListener('click', e => {
+                    const navItem = e.target.closest('.nav-item');
+                    if (navItem) this.render(navItem.dataset.section);
+                });
+                document.getElementById('sidebarToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('collapsed'));
+                
+                const quickActionButtons = ['addButton', 'quickAddButton'];
+                quickActionButtons.forEach(id => document.getElementById(id).addEventListener('click', () => UI.createNoteForm()));
+                
+                document.getElementById('cancelButton').addEventListener('click', () => UI.modal.classList.remove('active'));
+
+                UI.contentArea.addEventListener('click', e => {
+                    const target = e.target;
+                    const noteCard = target.closest('.note-item');
+                    const editButton = target.closest('[data-action="edit"]');
+                    const deleteButton = target.closest('[data-action="delete"]');
+                    const internalLink = target.closest('.internal-link');
+
+                    if (editButton) {
+                        const note = Database.getItem(editButton.dataset.id);
+                        if (note) UI.createNoteForm(note);
+                    } else if (deleteButton) {
+                        const note = Database.getItem(deleteButton.dataset.id);
+                        if (note && confirm(`Are you sure you want to permanently delete "${note.title}"?`)) {
+                            Database.deleteItem(note.id);
+                            this.render('notes');
+                        }
+                    } else if (internalLink) {
+                        e.preventDefault();
+                        const title = internalLink.dataset.linkTitle;
+                        const note = state.notes.find(n => n.title === title);
+                        if (note) this.renderNoteDetail(note.id);
+                        else if (confirm(`Note "${title}" does not exist. Create it?`)) UI.createNoteForm({ title, content: '', tags: [] });
+                    } else if (noteCard) {
+                        this.renderNoteDetail(noteCard.dataset.id);
+                    }
+                });
+
+                document.getElementById('globalSearch').addEventListener('input', e => {
+                    state.searchTerm = e.target.value.toLowerCase();
+                    if (state.currentSection === 'notes' && state.activeNoteId === null) {
+                        this.renderNotesList();
+                    } else {
+                         // If not in notes list view, switch to it
+                        this.render('notes');
+                    }
+                });
+            }
+        };
+
+        // --- 7. APPLICATION INITIALIZATION ---
+        App.init();
+
+    </script>
+</body>
+</html>
+```

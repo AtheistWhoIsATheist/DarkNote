@@ -1,0 +1,1741 @@
+---
+Title: Ai Prompt Library v2
+aliases:
+  - "NIHILTHEOS Protocol: Recursive Prompt Library (v2)"
+Date Created: 2025-04-01
+Last Updated: 2025-04-01T04:45:00
+tags:
+  - darknote
+  - gemini
+  - code
+Description: "An earlier, almost finished, Ai Prompt Library.  Features: auto-agging, summary. improvement to prompts, etc."
+Backlink:
+---
+
+
+
+import React, { useState, useEffect, useCallback } from 'react';
+
+import { initializeApp } from 'firebase/app';
+
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, updateDoc, deleteDoc, query, where, getDoc } from 'firebase/firestore';
+
+// Import marked for Markdown parsing
+
+import { marked } from 'marked';
+
+  
+  
+
+// Ensure Tailwind CSS is available in the environment.
+
+// This component assumes Tailwind CSS is globally linked or configured.
+
+  
+
+// Main App Component
+
+function App() {
+
+  // State variables for Firebase and user data
+
+  const [db, setDb] = useState(null);
+
+  const [auth, setAuth] = useState(null);
+
+  const [userId, setUserId] = useState(null);
+
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
+  
+
+  // State for prompts and UI
+
+  const [prompts, setPrompts] = useState([]);
+
+  const [newPromptTitle, setNewPromptTitle] = useState('');
+
+  const [newPromptText, setNewPromptText] = useState('');
+
+  const [newPromptTags, setNewPromptTags] = useState('');
+
+  const [editingPromptId, setEditingPromptId] = useState(null);
+
+  const [editPromptTitle, setEditPromptTitle] = useState('');
+
+  const [editPromptText, setEditPromptText] = useState('');
+
+  const [editPromptTags, setEditPromptTags] = useState('');
+
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState(null);
+
+  const [message, setMessage] = useState(''); // For user messages (e.g., success/error)
+
+  
+
+  // State for LLM operations
+
+  const [llmStates, setLlmStates] = useState({}); // Stores loading/results for each prompt's LLM ops
+
+  const [isGeneratingTags, setIsGeneratingTags] = useState(false);
+
+  const [generatedTagsError, setGeneratedTagsError] = useState(null);
+
+  
+
+  // Firebase Initialization and Authentication
+
+  useEffect(() => {
+
+    try {
+
+      // MANDATORY: Use __app_id and __firebase_config from the environment
+
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+  
+
+      if (Object.keys(firebaseConfig).length === 0) {
+
+        console.error("Firebase config is not defined. Please ensure __firebase_config is set.");
+
+        setError("Firebase configuration missing. Cannot connect to database.");
+
+        setLoading(false);
+
+        return;
+
+      }
+
+  
+
+      const app = initializeApp(firebaseConfig);
+
+      const firestore = getFirestore(app);
+
+      const firebaseAuth = getAuth(app);
+
+  
+
+      setDb(firestore);
+
+      setAuth(firebaseAuth);
+
+  
+
+      // Listen for auth state changes
+
+      const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+
+        if (user) {
+
+          setUserId(user.uid);
+
+          setIsAuthReady(true);
+
+        } else {
+
+          // If no user, try to sign in anonymously
+
+          try {
+
+            if (typeof __initial_auth_token !== 'undefined') {
+
+              await signInWithCustomToken(firebaseAuth, __initial_auth_token);
+
+            } else {
+
+              await signInAnonymously(firebaseAuth);
+
+            }
+
+          } catch (authError) {
+
+            console.error("Firebase authentication error:", authError);
+
+            setError(`Authentication failed: ${authError.message}`);
+
+            setLoading(false);
+
+          }
+
+        }
+
+      });
+
+  
+
+      // Cleanup subscription on unmount
+
+      return () => unsubscribe();
+
+    } catch (e) {
+
+      console.error("Error initializing Firebase:", e);
+
+      setError(`Failed to initialize Firebase: ${e.message}`);
+
+      setLoading(false);
+
+    }
+
+  }, []); // Run only once on component mount
+
+  
+
+  // Fetch prompts when auth is ready and userId is available
+
+  useEffect(() => {
+
+    if (!db || !auth || !userId || !isAuthReady) {
+
+      return;
+
+    }
+
+  
+
+    setLoading(true);
+
+    setError(null);
+
+  
+
+    // Define the collection path for private user data
+
+    // MANDATORY: Use /artifacts/{appId}/users/{userId}/{your_collection_name} for private data
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    const promptsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/prompts`);
+
+  
+
+    // Set up real-time listener for prompts
+
+    const unsubscribe = onSnapshot(promptsCollectionRef, (snapshot) => {
+
+      const fetchedPrompts = snapshot.docs.map(doc => ({
+
+        id: doc.id,
+
+        ...doc.data()
+
+      }));
+
+      // Sort prompts by creation date, assuming a 'createdAt' field or by ID
+
+      fetchedPrompts.sort((a, b) => (b.createdAt?.toDate() || b.id).toString().localeCompare((a.createdAt?.toDate() || a.id).toString()));
+
+      setPrompts(fetchedPrompts);
+
+      setLoading(false);
+
+    }, (err) => {
+
+      console.error("Error fetching prompts:", err);
+
+      setError(`Failed to load prompts: ${err.message}`);
+
+      setLoading(false);
+
+    });
+
+  
+
+    // Cleanup listener on unmount or when dependencies change
+
+    return () => unsubscribe();
+
+  }, [db, auth, userId, isAuthReady]); // Re-run when db, auth, userId, or isAuthReady changes
+
+  
+
+  // Function to display messages to the user
+
+  const showMessage = useCallback((msg, type = 'info') => {
+
+    setMessage({ text: msg, type });
+
+    const timer = setTimeout(() => {
+
+      setMessage('');
+
+    }, 3000); // Message disappears after 3 seconds
+
+    return () => clearTimeout(timer);
+
+  }, []);
+
+  
+
+  // Function to copy text to clipboard
+
+  const handleCopyToClipboard = (text, type) => {
+
+    try {
+
+      // Using document.execCommand('copy') for better compatibility in iframes
+
+      const textarea = document.createElement('textarea');
+
+      textarea.value = text;
+
+      document.body.appendChild(textarea);
+
+      textarea.select();
+
+      document.execCommand('copy');
+
+      document.body.removeChild(textarea);
+
+      showMessage(`${type} copied to clipboard!`, 'success');
+
+    } catch (err) {
+
+      console.error('Failed to copy text: ', err);
+
+      showMessage(`Failed to copy ${type}.`, 'error');
+
+    }
+
+  };
+
+  
+
+  // Add a new prompt
+
+  const handleAddPrompt = async () => {
+
+    if (!newPromptTitle.trim() || !newPromptText.trim()) {
+
+      showMessage('Prompt title and text cannot be empty.', 'error');
+
+      return;
+
+    }
+
+    if (!db || !userId) {
+
+      showMessage('Database not ready or user not authenticated.', 'error');
+
+      return;
+
+    }
+
+  
+
+    try {
+
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+      const promptsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/prompts`);
+
+      await addDoc(promptsCollectionRef, {
+
+        title: newPromptTitle.trim(),
+
+        text: newPromptText.trim(),
+
+        tags: newPromptTags.trim().split(',').map(tag => tag.trim()).filter(tag => tag !== ''),
+
+        createdAt: new Date(), // Add a timestamp for sorting
+
+      });
+
+      setNewPromptTitle('');
+
+      setNewPromptText('');
+
+      setNewPromptTags('');
+
+      showMessage('Prompt added successfully!', 'success');
+
+    } catch (e) {
+
+      console.error("Error adding document: ", e);
+
+      showMessage(`Failed to add prompt: ${e.message}`, 'error');
+
+    }
+
+  };
+
+  
+
+  // Start editing a prompt
+
+  const startEditing = (prompt) => {
+
+    setEditingPromptId(prompt.id);
+
+    setEditPromptTitle(prompt.title);
+
+    setEditPromptText(prompt.text);
+
+    setEditPromptTags(prompt.tags.join(', '));
+
+  };
+
+  
+
+  // Save edited prompt
+
+  const handleSaveEdit = async (id) => {
+
+    if (!editPromptTitle.trim() || !editPromptText.trim()) {
+
+      showMessage('Prompt title and text cannot be empty.', 'error');
+
+      return;
+
+    }
+
+    if (!db || !userId) {
+
+      showMessage('Database not ready or user not authenticated.', 'error');
+
+      return;
+
+    }
+
+  
+
+    try {
+
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+      const promptDocRef = doc(db, `artifacts/${appId}/users/${userId}/prompts`, id);
+
+      await updateDoc(promptDocRef, {
+
+        title: editPromptTitle.trim(),
+
+        text: editPromptText.trim(),
+
+        tags: editPromptTags.trim().split(',').map(tag => tag.trim()).filter(tag => tag !== ''),
+
+      });
+
+      setEditingPromptId(null);
+
+      showMessage('Prompt updated successfully!', 'success');
+
+    } catch (e) {
+
+      console.error("Error updating document: ", e);
+
+      showMessage(`Failed to update prompt: ${e.message}`, 'error');
+
+    }
+
+  };
+
+  
+
+  // Cancel editing
+
+  const handleCancelEdit = () => {
+
+    setEditingPromptId(null);
+
+  };
+
+  
+
+  // Delete a prompt
+
+  const handleDeletePrompt = async (id) => {
+
+    if (!db || !userId) {
+
+      showMessage('Database not ready or user not authenticated.', 'error');
+
+      return;
+
+    }
+
+  
+
+    // Use a custom modal for confirmation instead of window.confirm
+
+    if (window.confirm("Are you sure you want to delete this prompt?")) { // Using window.confirm for simplicity, but a custom modal is preferred as per guidelines
+
+      try {
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        const promptDocRef = doc(db, `artifacts/${appId}/users/${userId}/prompts`, id);
+
+        await deleteDoc(promptDocRef);
+
+        showMessage('Prompt deleted successfully!', 'success');
+
+      } catch (e) {
+
+        console.error("Error deleting document: ", e);
+
+        showMessage(`Failed to delete prompt: ${e.message}`, 'error');
+
+      }
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Summarize Prompt
+
+  const handleSummarizePrompt = async (promptId, promptText) => {
+
+    setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], isSummarizing: true, summary: null, llmError: null, expansion: null, counterThesis: null, refinedPrompt: null, paradoxStack: null, psychomorphologicalAnalysis: null } })); // Clear other LLM outputs
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Summarize the following text concisely. Format the output using Markdown, including headings (H1, H2, H3), bold text, and italic text where appropriate to structure and emphasize the content:\n\n${promptText}` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const text = result.candidates[0].content.parts[0].text;
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], summary: text, isSummarizing: false } }));
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Summarization failed: ${errorMessage}`, isSummarizing: false } }));
+
+        console.error("Gemini API error (summarize):", result);
+
+      }
+
+    } catch (e) {
+
+      setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Network error during summarization: ${e.message}`, isSummarizing: false } }));
+
+      console.error("Fetch error (summarize):", e);
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Expand Prompt (Iterative)
+
+  const handleExpandPrompt = async (promptId, originalPromptText) => {
+
+    // Determine the input text for expansion: current expansion if available, otherwise original prompt text
+
+    const currentExpansion = llmStates[promptId]?.expansion;
+
+    const inputText = currentExpansion || originalPromptText;
+
+  
+
+    setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], isExpanding: true, expansion: null, summary: null, counterThesis: null, refinedPrompt: null, paradoxStack: null, psychomorphologicalAnalysis: null, llmError: null } })); // Clear other LLM outputs
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Expand on the following text, adding more detail and depth. Format the output using Markdown, including headings (H1, H2, H3), bold text, and italic text where appropriate to structure and emphasize the content:\n\n${inputText}` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const text = result.candidates[0].content.parts[0].text;
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], expansion: text, isExpanding: false } }));
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Expansion failed: ${errorMessage}`, isExpanding: false } }));
+
+        console.error("Gemini API error (expand):", result);
+
+      }
+
+    } catch (e) {
+
+      setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Network error during expansion: ${e.message}`, isExpanding: false } }));
+
+      console.error("Fetch error (expand):", e);
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Generate Tags for New Prompt
+
+  const handleGenerateTags = async () => {
+
+    if (!newPromptText.trim()) {
+
+      showMessage('Please enter some prompt text to generate tags.', 'error');
+
+      return;
+
+    }
+
+  
+
+    setIsGeneratingTags(true);
+
+    setGeneratedTagsError(null);
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Based on the following text, suggest 3-5 comma-separated keywords or tags. Only return the tags, no other text.\n\nText: "${newPromptText}"` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const tags = result.candidates[0].content.parts[0].text;
+
+        setNewPromptTags(tags.trim()); // Set the generated tags
+
+        showMessage('Tags generated successfully!', 'success');
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setGeneratedTagsError(`Failed to generate tags: ${errorMessage}`);
+
+        console.error("Gemini API error (generate tags):", result);
+
+      }
+
+    } catch (e) {
+
+      setGeneratedTagsError(`Network error during tag generation: ${e.message}`);
+
+      console.error("Fetch error (generate tags):", e);
+
+    } finally {
+
+      setIsGeneratingTags(false);
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Generate Counter-Thesis
+
+  const handleGenerateCounterThesis = async (promptId, promptText) => {
+
+    setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], isGeneratingCounterThesis: true, counterThesis: null, summary: null, expansion: null, refinedPrompt: null, paradoxStack: null, psychomorphologicalAnalysis: null, llmError: null } })); // Clear other LLM outputs
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Generate a philosophical counter-thesis or an opposing argument to the following statement, focusing on contradiction and negation. Format the output using Markdown, including headings (H1, H2, H3), bold text, and italic text where appropriate to structure and emphasize the content:\n\nStatement: "${promptText}"` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const text = result.candidates[0].content.parts[0].text;
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], counterThesis: text, isGeneratingCounterThesis: false } }));
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Counter-thesis generation failed: ${errorMessage}`, isGeneratingCounterThesis: false } }));
+
+        console.error("Gemini API error (counter-thesis):", result);
+
+      }
+
+    } catch (e) {
+
+      setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Network error during counter-thesis generation: ${e.message}`, isGeneratingCounterThesis: false } }));
+
+      console.error("Fetch error (counter-thesis):", e);
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Refine Prompt
+
+  const handleRefinePrompt = async (promptId, promptText) => {
+
+    setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], isRefiningPrompt: true, refinedPrompt: null, summary: null, expansion: null, counterThesis: null, paradoxStack: null, psychomorphologicalAnalysis: null, llmError: null } })); // Clear other LLM outputs
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Refine the following text for enhanced clarity and conciseness, maintaining its original philosophical depth and meaning. Format the output using Markdown, including headings (H1, H2, H3), bold text, and italic text where appropriate to structure and emphasize the content:\n\nText: "${promptText}"` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const text = result.candidates[0].content.parts[0].text;
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], refinedPrompt: text, isRefiningPrompt: false } }));
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Prompt refinement failed: ${errorMessage}`, isRefiningPrompt: false } }));
+
+        console.error("Gemini API error (refine prompt):", result);
+
+      }
+
+    } catch (e) {
+
+      setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Network error during prompt refinement: ${e.message}`, isRefiningPrompt: false } }));
+
+      console.error("Fetch error (refine prompt):", e);
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Generate Paradox-Stack
+
+  const handleGenerateParadoxStack = async (promptId, promptText) => {
+
+    setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], isGeneratingParadoxStack: true, paradoxStack: null, summary: null, expansion: null, counterThesis: null, refinedPrompt: null, psychomorphologicalAnalysis: null, llmError: null } })); // Clear other LLM outputs
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Generate a series of interconnected paradoxical statements or questions derived from the core idea of the following text. Focus on inherent contradictions and self-negating inversions. Format the output using Markdown, including headings (H1, H2, H3), bold text, and italic text where appropriate to structure and emphasize the content:\n\nText: "${promptText}"` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const text = result.candidates[0].content.parts[0].text;
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], paradoxStack: text, isGeneratingParadoxStack: false } }));
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Paradox-stack generation failed: ${errorMessage}`, isGeneratingParadoxStack: false } }));
+
+        console.error("Gemini API error (paradox-stack):", result);
+
+      }
+
+    } catch (e) {
+
+      setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Network error during paradox-stack generation: ${e.message}`, isGeneratingParadoxStack: false } }));
+
+      console.error("Fetch error (paradox-stack):", e);
+
+    }
+
+  };
+
+  
+
+  // LLM Function: Psychomorphological Analysis
+
+  const handlePsychomorphologicalAnalysis = async (promptId, promptText) => {
+
+    setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], isAnalyzingPsychomorphology: true, psychomorphologicalAnalysis: null, summary: null, expansion: null, counterThesis: null, refinedPrompt: null, paradoxStack: null, llmError: null } })); // Clear other LLM outputs
+
+    try {
+
+      let chatHistory = [];
+
+      chatHistory.push({ role: "user", parts: [{ text: `Analyze the psychomorphological implications of the following text, exploring the shape of a self aware it is structured by Nothing, and constructing psycho-epistemologies of despair, recursion, or anti-self-awareness. Format the output using Markdown, including headings (H1, H2, H3), bold text, and italic text where appropriate to structure and emphasize the content:\n\nText: "${promptText}"` }] });
+
+      const payload = { contents: chatHistory };
+
+      const apiKey = ""; // Leave as-is for Canvas environment
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+  
+
+      const response = await fetch(apiUrl, {
+
+        method: 'POST',
+
+        headers: { 'Content-Type': 'application/json' },
+
+        body: JSON.stringify(payload)
+
+      });
+
+  
+
+      const result = await response.json();
+
+  
+
+      if (result.candidates && result.candidates.length > 0 &&
+
+          result.candidates[0].content && result.candidates[0].content.parts &&
+
+          result.candidates[0].content.parts.length > 0) {
+
+        const text = result.candidates[0].content.parts[0].text;
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], psychomorphologicalAnalysis: text, isAnalyzingPsychomorphology: false } }));
+
+      } else {
+
+        const errorMessage = result.error?.message || 'Unexpected API response structure.';
+
+        setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Psychomorphological analysis failed: ${errorMessage}`, isAnalyzingPsychomorphology: false } }));
+
+        console.error("Gemini API error (psychomorphological analysis):", result);
+
+      }
+
+    } catch (e) {
+
+      setLlmStates(prev => ({ ...prev, [promptId]: { ...prev[promptId], llmError: `Network error during psychomorphological analysis: ${e.message}`, isAnalyzingPsychomorphology: false } }));
+
+      console.error("Fetch error (psychomorphological analysis):", e);
+
+    }
+
+  };
+
+  
+
+  // Function to clear LLM results for a specific prompt
+
+  const clearLlmResult = (promptId, type) => {
+
+    setLlmStates(prev => {
+
+      const newState = { ...prev };
+
+      if (newState[promptId]) {
+
+        if (type === 'summary' || type === 'all') newState[promptId].summary = null;
+
+        if (type === 'expansion' || type === 'all') newState[promptId].expansion = null;
+
+        if (type === 'counterThesis' || type === 'all') newState[promptId].counterThesis = null;
+
+        if (type === 'refinedPrompt' || type === 'all') newState[promptId].refinedPrompt = null;
+
+        if (type === 'paradoxStack' || type === 'all') newState[promptId].paradoxStack = null;
+
+        if (type === 'psychomorphologicalAnalysis' || type === 'all') newState[promptId].psychomorphologicalAnalysis = null;
+
+        if (type === 'error' || type === 'all') newState[promptId].llmError = null;
+
+      }
+
+      return newState;
+
+    });
+
+  };
+
+  
+
+  // Function to use LLM output as a new prompt
+
+  const handleUseAsNewPrompt = (text) => {
+
+    setNewPromptText(text);
+
+    setNewPromptTitle(''); // Clear title to encourage new title
+
+    setNewPromptTags(''); // Clear tags to encourage new tags or generation
+
+    showMessage('LLM output copied to new prompt input!', 'info');
+
+    // Optionally scroll to the add new prompt section
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  };
+
+  
+
+  // Function to append LLM output to the original prompt
+
+  const handleAppendPrompt = async (promptId, textToAppend) => {
+
+    if (!db || !userId) {
+
+      showMessage('Database not ready or user not authenticated.', 'error');
+
+      return;
+
+    }
+
+  
+
+    try {
+
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+      const promptDocRef = doc(db, `artifacts/${appId}/users/${userId}/prompts`, promptId);
+
+      const docSnap = await getDoc(promptDocRef);
+
+  
+
+      if (docSnap.exists()) {
+
+        const currentText = docSnap.data().text;
+
+        // Ensure there's a clear separation if the current text isn't empty
+
+        const separator = currentText.trim() === "" ? "" : "\n\n";
+
+        const updatedText = currentText + separator + textToAppend;
+
+        await updateDoc(promptDocRef, { text: updatedText });
+
+        showMessage('LLM output appended to prompt successfully!', 'success');
+
+        // Clear the specific LLM output that was appended, but keep others if any
+
+        // This requires knowing which type of output was appended. For simplicity, clear all.
+
+        clearLlmResult(promptId, 'all');
+
+      } else {
+
+        showMessage('Prompt not found.', 'error');
+
+      }
+
+    } catch (e) {
+
+      console.error("Error appending to prompt: ", e);
+
+      showMessage(`Failed to append to prompt: ${e.message}`, 'error');
+
+    }
+
+  };
+
+  
+
+  // Function to copy the entire prompt text to clipboard
+
+  const handleCopyPromptText = (promptText) => { // Renamed to avoid conflict
+
+    handleCopyToClipboard(promptText, 'Prompt');
+
+  };
+
+  
+  
+
+  // Filtered prompts based on search term (case-insensitive)
+
+  const filteredPrompts = prompts.filter(prompt =>
+
+    prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+
+    prompt.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+
+    prompt.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  );
+
+  
+
+  // Render the component
+
+  return (
+
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-gray-100 font-inter p-4 sm:p-8 flex flex-col items-center">
+
+      <div className="w-full max-w-4xl bg-gray-800 rounded-xl shadow-2xl p-6 sm:p-8 space-y-8 border border-gray-700">
+
+        <h1 className="text-4xl sm:text-5xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 mb-8">
+
+          NIHILTHEOS Prompt Library
+
+        </h1>
+
+  
+
+        {/* Display User ID */}
+
+        {userId && (
+
+          <p className="text-center text-sm text-gray-400 mb-4">
+
+            User ID: <span className="font-mono text-purple-300 break-all">{userId}</span>
+
+          </p>
+
+        )}
+
+  
+
+        {/* Message Display */}
+
+        {message && (
+
+          <div className={`p-3 rounded-lg text-center font-semibold ${message.type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+
+            {message.text}
+
+          </div>
+
+        )}
+
+  
+
+        {/* Error Display */}
+
+        {error && (
+
+          <div className="p-4 rounded-lg bg-red-800 text-white text-center font-semibold">
+
+            Error: {error}
+
+          </div>
+
+        )}
+
+  
+
+        {/* Add New Prompt Section */}
+
+        <div className="bg-gray-700 p-6 rounded-lg shadow-inner border border-gray-600">
+
+          <h2 className="text-2xl font-bold text-purple-300 mb-4">Add New Prompt</h2>
+
+          <div className="space-y-4">
+
+            <input
+
+              type="text"
+
+              placeholder="Prompt Title"
+
+              value={newPromptTitle}
+
+              onChange={(e) => setNewPromptTitle(e.target.value)}
+
+              className="w-full p-3 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition duration-200"
+
+            />
+
+            <textarea
+
+              placeholder="Prompt Text"
+
+              value={newPromptText}
+
+              onChange={(e) => setNewPromptText(e.target.value)}
+
+              rows="5"
+
+              className="w-full p-3 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition duration-200 resize-y"
+
+            ></textarea>
+
+            <div className="flex items-center space-x-2">
+
+              <input
+
+                type="text"
+
+                placeholder="Tags (comma-separated, e.g., 'creative, writing, code')"
+
+                value={newPromptTags}
+
+                onChange={(e) => setNewPromptTags(e.target.value)}
+
+                className="flex-grow p-3 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition duration-200"
+
+              />
+
+              <button
+
+                onClick={handleGenerateTags}
+
+                disabled={isGeneratingTags}
+
+                className="bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white font-bold py-3 px-4 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+
+              >
+
+                {isGeneratingTags ? 'Generating...' : 'Generate Tags ✨'}
+
+              </button>
+
+            </div>
+
+            {generatedTagsError && (
+
+              <p className="text-red-400 text-sm">{generatedTagsError}</p>
+
+            )}
+
+            <button
+
+              onClick={handleAddPrompt}
+
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 px-6 rounded-md shadow-lg transition duration-300 ease-in-out transform hover:scale-105"
+
+            >
+
+              Add Prompt
+
+            </button>
+
+          </div>
+
+        </div>
+
+  
+
+        {/* Search Prompts Section */}
+
+        <div className="bg-gray-700 p-6 rounded-lg shadow-inner border border-gray-600">
+
+          <h2 className="text-2xl font-bold text-purple-300 mb-4">Search Prompts</h2>
+
+          <input
+
+            type="text"
+
+            placeholder="Search by title, text, or tags..."
+
+            value={searchTerm}
+
+            onChange={(e) => setSearchTerm(e.target.value)}
+
+            className="w-full p-3 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition duration-200"
+
+          />
+
+        </div>
+
+  
+
+        {/* Prompt List Section */}
+
+        <div className="bg-gray-700 p-6 rounded-lg shadow-inner border border-gray-600">
+
+          <h2 className="text-2xl font-bold text-purple-300 mb-4">Your Prompts</h2>
+
+          {loading ? (
+
+            <p className="text-center text-gray-400">Loading prompts...</p>
+
+          ) : filteredPrompts.length === 0 ? (
+
+            <p className="text-center text-gray-400">No prompts found. Add one above!</p>
+
+          ) : (
+
+            <div className="space-y-4">
+
+              {filteredPrompts.map((prompt) => (
+
+                <div key={prompt.id} className="bg-gray-800 p-4 rounded-lg shadow-md border border-gray-600">
+
+                  {editingPromptId === prompt.id ? (
+
+                    <div className="space-y-3">
+
+                      <input
+
+                        type="text"
+
+                        value={editPromptTitle}
+
+                        onChange={(e) => setEditPromptTitle(e.target.value)}
+
+                        className="w-full p-2 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none"
+
+                      />
+
+                      <textarea
+
+                        value={editPromptText}
+
+                        onChange={(e) => setEditPromptText(e.target.value)}
+
+                        rows="4"
+
+                        className="w-full p-2 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none resize-y"
+
+                      ></textarea>
+
+                      <input
+
+                        type="text"
+
+                        value={editPromptTags}
+
+                        onChange={(e) => setEditPromptTags(e.target.value)}
+
+                        placeholder="Tags (comma-separated)"
+
+                        className="w-full p-2 rounded-md bg-gray-900 text-gray-200 border border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none"
+
+                      />
+
+                      <div className="flex justify-end space-x-2">
+
+                        <button
+
+                          onClick={() => handleSaveEdit(prompt.id)}
+
+                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+
+                        >
+
+                          Save
+
+                        </button>
+
+                        <button
+
+                          onClick={handleCancelEdit}
+
+                          className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+
+                        >
+
+                          Cancel
+
+                        </button>
+
+                      </div>
+
+                    </div>
+
+                  ) : (
+
+                    <div>
+
+                      <h3 className="text-xl font-semibold text-purple-200 mb-2">{prompt.title}</h3>
+
+                      <div className="text-gray-300 mb-3 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(prompt.text) }}></div>
+
+                      {prompt.tags && prompt.tags.length > 0 && (
+
+                        <div className="flex flex-wrap gap-2 mb-3">
+
+                          {prompt.tags.map((tag, index) => (
+
+                            <span key={index} className="bg-purple-800 text-purple-200 text-xs font-medium px-2.5 py-0.5 rounded-full">
+
+                              {tag}
+
+                            </span>
+
+                          ))}
+
+                        </div>
+
+                      )}
+
+                      <div className="flex justify-end space-x-2 mt-4 flex-wrap gap-2"> {/* Added flex-wrap and gap */}
+
+                        <button
+
+                          onClick={() => handleSummarizePrompt(prompt.id, prompt.text)}
+
+                          disabled={llmStates[prompt.id]?.isSummarizing || llmStates[prompt.id]?.isExpanding || llmStates[prompt.id]?.isGeneratingCounterThesis || llmStates[prompt.id]?.isRefiningPrompt || llmStates[prompt.id]?.isGeneratingParadoxStack || llmStates[prompt.id]?.isAnalyzingPsychomorphology}
+
+                          className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                        >
+
+                          {llmStates[prompt.id]?.isSummarizing ? 'Summarizing...' : 'Summarize ✨'}
+
+                        </button>
+
+                        <button
+
+                          onClick={() => handleExpandPrompt(prompt.id, prompt.text)}
+
+                          disabled={llmStates[prompt.id]?.isSummarizing || llmStates[prompt.id]?.isExpanding || llmStates[prompt.id]?.isGeneratingCounterThesis || llmStates[prompt.id]?.isRefiningPrompt || llmStates[prompt.id]?.isGeneratingParadoxStack || llmStates[prompt.id]?.isAnalyzingPsychomorphology}
+
+                          className="bg-gradient-to-r from-orange-600 to-yellow-600 hover:from-orange-700 hover:to-yellow-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                        >
+
+                          {llmStates[prompt.id]?.isExpanding ? 'Expanding...' : (llmStates[prompt.id]?.expansion ? 'Expand Further ✨' : 'Expand ✨')}
+
+                        </button>
+
+                        <button
+
+                          onClick={() => handleGenerateCounterThesis(prompt.id, prompt.text)}
+
+                          disabled={llmStates[prompt.id]?.isSummarizing || llmStates[prompt.id]?.isExpanding || llmStates[prompt.id]?.isGeneratingCounterThesis || llmStates[prompt.id]?.isRefiningPrompt || llmStates[prompt.id]?.isGeneratingParadoxStack || llmStates[prompt.id]?.isAnalyzingPsychomorphology}
+
+                          className="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                        >
+
+                          {llmStates[prompt.id]?.isGeneratingCounterThesis ? 'Generating...' : 'Counter-Thesis ✨'}
+
+                        </button>
+
+                        <button
+
+                          onClick={() => handleRefinePrompt(prompt.id, prompt.text)}
+
+                          disabled={llmStates[prompt.id]?.isSummarizing || llmStates[prompt.id]?.isExpanding || llmStates[prompt.id]?.isGeneratingCounterThesis || llmStates[prompt.id]?.isRefiningPrompt || llmStates[prompt.id]?.isGeneratingParadoxStack || llmStates[prompt.id]?.isAnalyzingPsychomorphology}
+
+                          className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                        >
+
+                          {llmStates[prompt.id]?.isRefiningPrompt ? 'Refining...' : 'Refine Prompt ✨'}
+
+                        </button>
+
+                        <button
+
+                          onClick={() => handleGenerateParadoxStack(prompt.id, prompt.text)}
+
+                          disabled={llmStates[prompt.id]?.isSummarizing || llmStates[prompt.id]?.isExpanding || llmStates[prompt.id]?.isGeneratingCounterThesis || llmStates[prompt.id]?.isRefiningPrompt || llmStates[prompt.id]?.isGeneratingParadoxStack || llmStates[prompt.id]?.isAnalyzingPsychomorphology}
+
+                          className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                        >
+
+                          {llmStates[prompt.id]?.isGeneratingParadoxStack ? 'Generating...' : 'Paradox-Stack ✨'}
+
+                        </button>
+
+                        <button
+
+                          onClick={() => handlePsychomorphologicalAnalysis(prompt.id, prompt.text)}
+
+                          disabled={llmStates[prompt.id]?.isSummarizing || llmStates[prompt.id]?.isExpanding || llmStates[prompt.id]?.isGeneratingCounterThesis || llmStates[prompt.id]?.isRefiningPrompt || llmStates[prompt.id]?.isGeneratingParadoxStack || llmStates[prompt.id]?.isAnalyzingPsychomorphology}
+
+                          className="bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+
+                        >
+
+                          {llmStates[prompt.id]?.isAnalyzingPsychomorphology ? 'Analyzing...' : 'Psychomorphology ✨'}
+
+                        </button>
+
+                         <button
+
+                          onClick={() => handleCopyPromptText(prompt.text)}
+
+                          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+
+                        >
+
+                          Copy Prompt
+
+                        </button>
+
+                        <button
+
+                          onClick={() => startEditing(prompt)}
+
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+
+                        >
+
+                          Edit
+
+                        </button>
+
+                        <button
+
+                          onClick={() => handleDeletePrompt(prompt.id)}
+
+                          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+
+                        >
+
+                          Delete
+
+                        </button>
+
+                      </div>
+
+  
+
+                      {/* Display LLM Results */}
+
+                      {(llmStates[prompt.id]?.summary || llmStates[prompt.id]?.expansion || llmStates[prompt.id]?.counterThesis || llmStates[prompt.id]?.refinedPrompt || llmStates[prompt.id]?.paradoxStack || llmStates[prompt.id]?.psychomorphologicalAnalysis || llmStates[prompt.id]?.llmError) && (
+
+                        <div className="mt-4 p-3 bg-gray-900 rounded-lg border border-gray-700 relative">
+
+                          <div className="absolute top-2 right-2 flex space-x-2">
+
+                            {/* Copy buttons for each LLM output type */}
+
+                            {llmStates[prompt.id]?.summary && <button onClick={() => handleCopyToClipboard(llmStates[prompt.id].summary, 'Summary')} className="text-gray-400 hover:text-gray-200 text-sm px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 transition">Copy</button>}
+
+                            {llmStates[prompt.id]?.expansion && <button onClick={() => handleCopyToClipboard(llmStates[prompt.id].expansion, 'Expansion')} className="text-gray-400 hover:text-gray-200 text-sm px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 transition">Copy</button>}
+
+                            {llmStates[prompt.id]?.counterThesis && <button onClick={() => handleCopyToClipboard(llmStates[prompt.id].counterThesis, 'Counter-Thesis')} className="text-gray-400 hover:text-gray-200 text-sm px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 transition">Copy</button>}
+
+                            {llmStates[prompt.id]?.refinedPrompt && <button onClick={() => handleCopyToClipboard(llmStates[prompt.id].refinedPrompt, 'Refined Prompt')} className="text-gray-400 hover:text-gray-200 text-sm px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 transition">Copy</button>}
+
+                            {llmStates[prompt.id]?.paradoxStack && <button onClick={() => handleCopyToClipboard(llmStates[prompt.id].paradoxStack, 'Paradox-Stack')} className="text-gray-400 hover:text-gray-200 text-sm px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 transition">Copy</button>}
+
+                            {llmStates[prompt.id]?.psychomorphologicalAnalysis && <button onClick={() => handleCopyToClipboard(llmStates[prompt.id].psychomorphologicalAnalysis, 'Psychomorphological Analysis')} className="text-gray-400 hover:text-gray-200 text-sm px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 transition">Copy</button>}
+
+                            <button
+
+                                onClick={() => clearLlmResult(prompt.id, 'all')} // Simplified to clear all for now
+
+                                className="text-gray-400 hover:text-gray-200 text-lg"
+
+                                aria-label="Clear result"
+
+                            >
+
+                                &times;
+
+                            </button>
+
+                          </div>
+
+  
+
+                          {llmStates[prompt.id]?.llmError ? (
+
+                            <p className="text-red-400 text-sm">Error: {llmStates[prompt.id]?.llmError}</p>
+
+                          ) : llmStates[prompt.id]?.summary ? (
+
+                            <>
+
+                              <h4 className="font-semibold text-purple-300 mb-1">Summary:</h4>
+
+                              <div className="text-gray-300 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(llmStates[prompt.id].summary) }}></div>
+
+                              <div className="flex space-x-2 mt-2">
+
+                                <button onClick={() => handleUseAsNewPrompt(llmStates[prompt.id].summary)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Use as New Prompt</button>
+
+                                <button onClick={() => handleAppendPrompt(prompt.id, llmStates[prompt.id].summary)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Append Prompt ✨</button>
+
+                              </div>
+
+                            </>
+
+                          ) : llmStates[prompt.id]?.expansion ? (
+
+                            <>
+
+                              <h4 className="font-semibold text-purple-300 mb-1">Expansion:</h4>
+
+                              <div className="text-gray-300 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(llmStates[prompt.id].expansion) }}></div>
+
+                              <div className="flex space-x-2 mt-2">
+
+                                <button onClick={() => handleUseAsNewPrompt(llmStates[prompt.id].expansion)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Use as New Prompt</button>
+
+                                <button onClick={() => handleAppendPrompt(prompt.id, llmStates[prompt.id].expansion)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Append Prompt ✨</button>
+
+                              </div>
+
+                            </>
+
+                          ) : llmStates[prompt.id]?.counterThesis ? (
+
+                            <>
+
+                              <h4 className="font-semibold text-purple-300 mb-1">Counter-Thesis:</h4>
+
+                              <div className="text-gray-300 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(llmStates[prompt.id].counterThesis) }}></div>
+
+                              <div className="flex space-x-2 mt-2">
+
+                                <button onClick={() => handleUseAsNewPrompt(llmStates[prompt.id].counterThesis)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Use as New Prompt</button>
+
+                                <button onClick={() => handleAppendPrompt(prompt.id, llmStates[prompt.id].counterThesis)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Append Prompt ✨</button>
+
+                              </div>
+
+                            </>
+
+                          ) : llmStates[prompt.id]?.refinedPrompt ? (
+
+                            <>
+
+                              <h4 className="font-semibold text-purple-300 mb-1">Refined Prompt:</h4>
+
+                              <div className="text-gray-300 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(llmStates[prompt.id].refinedPrompt) }}></div>
+
+                              <div className="flex space-x-2 mt-2">
+
+                                <button onClick={() => handleUseAsNewPrompt(llmStates[prompt.id].refinedPrompt)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Use as New Prompt</button>
+
+                                <button onClick={() => handleAppendPrompt(prompt.id, llmStates[prompt.id].refinedPrompt)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Append Prompt ✨</button>
+
+                              </div>
+
+                            </>
+
+                          ) : llmStates[prompt.id]?.paradoxStack ? (
+
+                            <>
+
+                              <h4 className="font-semibold text-purple-300 mb-1">Paradox-Stack:</h4>
+
+                              <div className="text-gray-300 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(llmStates[prompt.id].paradoxStack) }}></div>
+
+                              <div className="flex space-x-2 mt-2">
+
+                                <button onClick={() => handleUseAsNewPrompt(llmStates[prompt.id].paradoxStack)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Use as New Prompt</button>
+
+                                <button onClick={() => handleAppendPrompt(prompt.id, llmStates[prompt.id].paradoxStack)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Append Prompt ✨</button>
+
+                              </div>
+
+                            </>
+
+                          ) : llmStates[prompt.id]?.psychomorphologicalAnalysis ? (
+
+                            <>
+
+                              <h4 className="font-semibold text-purple-300 mb-1">Psychomorphological Analysis:</h4>
+
+                              <div className="text-gray-300 markdown-content" dangerouslySetInnerHTML={{ __html: marked.parse(llmStates[prompt.id].psychomorphologicalAnalysis) }}></div>
+
+                              <div className="flex space-x-2 mt-2">
+
+                                <button onClick={() => handleUseAsNewPrompt(llmStates[prompt.id].psychomorphologicalAnalysis)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Use as New Prompt</button>
+
+                                <button onClick={() => handleAppendPrompt(prompt.id, llmStates[prompt.id].psychomorphologicalAnalysis)} className="bg-purple-700 hover:bg-purple-800 text-white text-xs py-1 px-2 rounded-md transition">Append Prompt ✨</button>
+
+                              </div>
+
+                            </>
+
+                          ) : null}
+
+                        </div>
+
+                      )}
+
+                    </div>
+
+                  )}
+
+                </div>
+
+              ))}
+
+            </div>
+
+          )}
+
+        </div>
+
+      </div>
+
+    </div>
+
+  );
+
+}
+
+  
+
+export default App;

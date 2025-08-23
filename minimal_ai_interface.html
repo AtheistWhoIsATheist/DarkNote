@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nihiltheism Notes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #121212;
+      --panel-bg: #1a1a1a;
+      --text-color: #e0e0e0;
+      --text-secondary: #9c9c9c;
+      --accent-color: #6f4dff;
+      --border-color: #333;
+      --input-bg: #212122;
+      --button-bg: #242425;
+      --button-hover-bg: #2a2a2b;
+      --radius: 4px;
+      --shadow: 0 8px 18px rgba(0,0,0,.45);
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body, html {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      overflow: hidden;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .menu-button {
+      background: none;
+      border: none;
+      color: var(--text-color);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      margin-right: 1rem;
+    }
+
+    .title {
+      flex-grow: 1;
+      font-weight: 400;
+      font-size: 1.25rem;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      padding: 0.5rem;
+      gap: 0.5rem;
+    }
+
+    .button {
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: background-color 0.2s;
+    }
+
+    .button:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    .ai-button {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .ai-button .ai-icon {
+      font-size: 1rem;
+    }
+
+    .content {
+      flex-grow: 1;
+      padding: 2rem;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.6;
+    }
+
+    .content h1 {
+      font-size: 2rem;
+      font-weight: 400;
+      margin-bottom: 2rem;
+    }
+
+    .content p {
+      margin-bottom: 1.5rem;
+    }
+
+    .editor {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-color);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      color: var(--text-color);
+    }
+
+    /* AI Menu */
+    .ai-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      width: 220px;
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 100;
+      display: none;
+      overflow: hidden;
+    }
+
+    .ai-menu.visible {
+      display: block;
+    }
+
+    .ai-menu-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .ai-menu-item:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    .ai-menu-item i {
+      font-size: 1rem;
+      width: 1rem;
+      text-align: center;
+    }
+
+    /* AI Modal */
+    .ai-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .ai-modal.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .ai-modal-content {
+      width: 90%;
+      max-width: 700px;
+      max-height: 80vh;
+      background-color: var(--panel-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .ai-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .ai-modal-title {
+      font-size: 1.25rem;
+      font-weight: 400;
+    }
+
+    .ai-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-color);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+    }
+
+    .ai-modal-body {
+      padding: 1rem;
+      overflow-y: auto;
+      flex-grow: 1;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+    }
+
+    .ai-modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      padding: 1rem;
+      border-top: 1px solid var(--border-color);
+      gap: 0.5rem;
+    }
+
+    /* Context Menu */
+    .context-menu {
+      position: absolute;
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 100;
+      display: none;
+    }
+
+    .context-menu.visible {
+      display: block;
+    }
+
+    .context-menu-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .context-menu-item:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    .context-menu-item i {
+      font-size: 1rem;
+      width: 1rem;
+      text-align: center;
+    }
+
+    .context-menu-separator {
+      height: 1px;
+      background-color: var(--border-color);
+      margin: 0.25rem 0;
+    }
+
+    /* Command Palette */
+    .command-palette {
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 600px;
+      background-color: var(--panel-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      z-index: 300;
+      display: none;
+      overflow: hidden;
+    }
+
+    .command-palette.visible {
+      display: block;
+    }
+
+    .command-input {
+      width: 100%;
+      padding: 1rem;
+      background-color: var(--input-bg);
+      border: none;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-color);
+      font-family: inherit;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .command-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .command-item {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .command-item:hover, .command-item.selected {
+      background-color: var(--button-hover-bg);
+    }
+
+    .command-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .command-item-right {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    /* Floating AI Toolbar */
+    .floating-toolbar {
+      position: absolute;
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: none;
+      padding: 0.25rem;
+      z-index: 100;
+    }
+
+    .floating-toolbar.visible {
+      display: flex;
+    }
+
+    .floating-button {
+      background: none;
+      border: none;
+      color: var(--text-color);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: var(--radius);
+      transition: background-color 0.2s;
+    }
+
+    .floating-button:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    /* Philosophical Mode Indicator */
+    .mode-indicator {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .mode-indicator:hover {
+      opacity: 1;
+    }
+
+    /* Keyboard Shortcut Display */
+    .shortcut-display {
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      background-color: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .shortcut-display.visible {
+      opacity: 0.7;
+    }
+
+    .shortcut-key {
+      display: inline-block;
+      padding: 0.1rem 0.3rem;
+      background-color: var(--button-bg);
+      border-radius: 3px;
+      margin: 0 0.2rem;
+    }
+
+    /* Markdown Styling */
+    .markdown h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    .markdown h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+      margin-top: 1.5rem;
+      font-weight: 500;
+    }
+
+    .markdown h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+      margin-top: 1.25rem;
+      font-weight: 500;
+    }
+
+    .markdown p {
+      margin-bottom: 1rem;
+    }
+
+    .markdown ul, .markdown ol {
+      margin-bottom: 1rem;
+      padding-left: 1.5rem;
+    }
+
+    .markdown li {
+      margin-bottom: 0.5rem;
+    }
+
+    .markdown code {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9em;
+    }
+
+    .markdown blockquote {
+      border-left: 3px solid var(--accent-color);
+      padding-left: 1rem;
+      margin-left: 0;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .toolbar {
+        padding: 0.25rem;
+      }
+      
+      .button {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
+      }
+      
+      .content {
+        padding: 1rem;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <button class="menu-button" id="menu-button">≡</button>
+      <h1 class="title" id="document-title">Paralyzing Nihilism</h1>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="button" id="toggle-preview-btn">Toggle Preview</button>
+      <button class="button" id="export-btn">Export .md</button>
+      <button class="button ai-button" id="ai-button">
+        <i class="fas fa-brain ai-icon"></i>
+        <span>AI</span>
+      </button>
+    </div>
+    
+    <!-- Content Area -->
+    <div class="content" id="content">
+      <textarea class="editor" id="editor" spellcheck="false">
+# Markdown Test
+
+This is a test
+
+This is a test
+
+Name
+(Name of the knowledge(
+Manus will uses this knowledge when... * When to use this knowledge
+Content *
+</textarea>
+    </div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-left">The Religious Experience of Nihilism</div>
+      <div class="footer-right">
+        <a href="#" id="prev-link">← Previous</a>
+        <span class="footer-separator"> | </span>
+        <a href="#" id="next-link">Next →</a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- AI Menu -->
+  <div class="ai-menu" id="ai-menu">
+    <div class="ai-menu-item" data-action="summarize">
+      <i class="fas fa-compress-alt"></i>
+      <span>Summarize</span>
+    </div>
+    <div class="ai-menu-item" data-action="expand">
+      <i class="fas fa-expand-alt"></i>
+      <span>Expand</span>
+    </div>
+    <div class="ai-menu-item" data-action="analyze">
+      <i class="fas fa-chart-bar"></i>
+      <span>Analyze</span>
+    </div>
+    <div class="ai-menu-item" data-action="deep-research">
+      <i class="fas fa-search-plus"></i>
+      <span>Deep Research</span>
+    </div>
+    <div class="ai-menu-item" data-action="rewrite">
+      <i class="fas fa-pen-fancy"></i>
+      <span>Rewrite</span>
+    </div>
+    <div class="ai-menu-item" data-action="brainstorm">
+      <i class="fas fa-lightbulb"></i>
+      <span>Brainstorm</span>
+    </div>
+    <div class="ai-menu-item" data-action="professor-nihil">
+      <i class="fas fa-user-graduate"></i>
+      <span>Ask Professor Nihil</span>
+    </div>
+  </div>
+  
+  <!-- Context Menu -->
+  <div class="context-menu" id="context-menu">
+    <div class="context-menu-item">
+      <i class="fas fa-cut"></i>
+      <span>Cut</span>
+    </div>
+    <div class="context-menu-item">
+      <i class="fas fa-copy"></i>
+      <span>Copy</span>
+    </div>
+    <div class="context-menu-item">
+      <i class="fas fa-paste"></i>
+      <span>Paste</span>
+    </div>
+    <div class="context-menu-separator"></div>
+    <div class="context-menu-item" data-action="summarize">
+      <i class="fas fa-compress-alt"></i>
+      <span>Summarize</span>
+    </div>
+    <div class="context-menu-item" data-action="expand">
+      <i class="fas fa-expand-alt"></i>
+      <span>Expand</span>
+    </div>
+    <div class="context-menu-item" data-action="analyze">
+      <i class="fas fa-chart-bar"></i>
+      <span>Analyze</span>
+    </div>
+    <div class="context-menu-item" data-action="deep-research">
+      <i class="fas fa-search-plus"></i>
+      <span>Deep Research</span>
+    </div>
+    <div class="context-menu-item" data-action="rewrite">
+      <i class="fas fa-pen-fancy"></i>
+      <span>Rewrite</span>
+    </div>
+    <div class="context-menu-item" data-action="brainstorm">
+      <i class="fas fa-lightbulb"></i>
+      <span>Brainstorm</span>
+    </div>
+    <div class="context-menu-item" data-action="professor-nihil">
+      <i class="fas fa-user-graduate"></i>
+      <span>Ask Professor Nihil</span>
+    </div>
+  </div>
+  
+  <!-- Command Palette -->
+  <div class="command-palette" id="command-palette">
+    <input type="text" class="command-input" id="command-input" placeholder="Type a command...">
+    <div class="command-list" id="command-list">
+      <!-- Commands will be populated dynamically -->
+    </div>
+  </div>
+  
+  <!-- Floating AI Toolbar -->
+  <div class="floating-toolbar" id="floating-toolbar">
+    <button class="floating-button" data-action="summarize" title="Summarize">
+      <i class="fas fa-compress-alt"></i>
+    </button>
+    <button class="floating-button" data-action="expand" title="Expand">
+      <i class="fas fa-expand-alt"></i>
+    </button>
+    <button class="floating-button" data-action="analyze" title="Analyze">
+      <i class="fas fa-chart-bar"></i>
+    </button>
+    <button class="floating-button" data-action="deep-research" title="Deep Research">
+      <i class="fas fa-search-plus"></i>
+    </button>
+    <button class="floating-button" data-action="rewrite" title="Rewrite">
+      <i class="fas fa-pen-fancy"></i>
+    </button>
+    <button class="floating-button" data-action="brainstorm" title="Brainstorm">
+      <i class="fas fa-lightbulb"></i>
+    </button>
+  </div>
+  
+  <!-- AI Modal -->
+  <div class="ai-modal" id="ai-modal">
+    <div class="ai-modal-content">
+      <div class="ai-modal-header">
+        <h2 class="ai-modal-title" id="ai-modal-title">Professor Nihil</h2>
+        <button class="ai-modal-close" id="ai-modal-close">&times;</button>
+      </div>
+      <div class="ai-modal-body markdown" id="ai-modal-body">
+        <!-- AI response will be inserted here -->
+      </div>
+      <div class="ai-modal-footer">
+        <button class="button" id="ai-modal-insert">Insert into Document</button>
+        <button class="button" id="ai-modal-close-btn">Close</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Philosophical Mode Indicator -->
+  <div class="mode-indicator" id="mode-indicator">
+    <i class="fas fa-infinity"></i>
+    <span>Recursive-Dialectic</span>
+  </div>
+  
+  <!-- Keyboard Shortcut Display -->
+  <div class="shortcut-display" id="shortcut-display">
+    Press <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">P</span> for Command Palette
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM Elements
+      const editor = document.getElementById('editor');
+      const content = document.getElementById('content');
+      const aiButton = document.getElementById('ai-button');
+      const aiMenu = document.getElementById('ai-menu');
+      const contextMenu = document.getElementById('context-menu');
+      const commandPalette = document.getElementById('command-palette');
+      const commandInput = document.getElementById('command-input');
+      const commandList = document.getElementById('command-list');
+      const floatingToolbar = document.getElementById('floating-toolbar');
+      const aiModal = document.getElementById('ai-modal');
+      const aiModalTitle = document.getElementById('ai-modal-title');
+      const aiModalBody = document.getElementById('ai-modal-body');
+      const aiModalClose = document.getElementById('ai-modal-close');
+      const aiModalCloseBtn = document.getElementById('ai-modal-close-btn');
+      const aiModalInsert = document.getElementById('ai-modal-insert');
+      const togglePreviewBtn = document.getElementById('toggle-preview-btn');
+      const exportBtn = document.getElementById('export-btn');
+      const modeIndicator = document.getElementById('mode-indicator');
+      const shortcutDisplay = document.getElementById('shortcut-display');
+      
+      // State
+      let isPreviewMode = false;
+      let selectedText = '';
+      let aiResponse = '';
+      let currentPhilosophicalMode = 'recursive-dialectic';
+      
+      // Available commands
+      const commands = [
+        { id: 'toggle-preview', name: 'Toggle Preview', shortcut: 'Alt+P', icon: 'fas fa-eye' },
+        { id: 'export', name: 'Export as Markdown', shortcut: 'Alt+E', icon: 'fas fa-file-export' },
+        { id: 'summarize', name: 'Summarize Selection', shortcut: 'Alt+S', icon: 'fas fa-compress-alt' },
+        { id: 'expand', name: 'Expand Selection', shortcut: 'Alt+X', icon: 'fas fa-expand-alt' },
+        { id: 'analyze', name: 'Analyze Selection', shortcut: 'Alt+A', icon: 'fas fa-chart-bar' },
+        { id: 'deep-research', name: 'Deep Research', shortcut: 'Alt+D', icon: 'fas fa-search-plus' },
+        { id: 'rewrite', name: 'Rewrite Selection', shortcut: 'Alt+R', icon: 'fas fa-pen-fancy' },
+        { id: 'brainstorm', name: 'Brainstorm Ideas', shortcut: 'Alt+B', icon: 'fas fa-lightbulb' },
+        { id: 'professor-nihil', name: 'Ask Professor Nihil', shortcut: 'Alt+N', icon: 'fas fa-user-graduate' },
+        { id: 'change-mode', name: 'Change Philosophical Mode', shortcut: 'Alt+M', icon: 'fas fa-infinity' }
+      ];
+      
+      // Philosophical modes
+      const philosophicalModes = [
+        'Recursive-Dialectic',
+        'Ontological-Collapse',
+        'Apophatic-Synthesis',
+        'Mythopoetic-Logic'
+      ];
+      
+      // Initialize Command Palette
+      function initCommandPalette() {
+        commandList.innerHTML = '';
+        
+        commands.forEach(command => {
+          const item = document.createElement('div');
+          item.className = 'command-item';
+          item.dataset.id = command.id;
+          
+          const left = document.createElement('div');
+          left.className = 'command-item-left';
+          
+          const icon = document.createElement('i');
+          icon.className = command.icon;
+          
+          const name = document.createElement('span');
+          name.textContent = command.name;
+          
+          left.appendChild(icon);
+          left.appendChild(name);
+          
+          const right = document.createElement('div');
+          right.className = 'command-item-right';
+          right.textContent = command.shortcut;
+          
+          item.appendChild(left);
+          item.appendChild(right);
+          
+          commandList.appendChild(item);
+          
+          item.addEventListener('click', () => {
+            executeCommand(command.id);
+            hideCommandPalette();
+          });
+        });
+      }
+      
+      // Show Command Palette
+      function showCommandPalette() {
+        commandPalette.classList.add('visible');
+        commandInput.value = '';
+        commandInput.focus();
+        filterCommands('');
+      }
+      
+      // Hide Command Palette
+      function hideCommandPalette() {
+        commandPalette.classList.remove('visible');
+      }
+      
+      // Filter Commands
+      function filterCommands(query) {
+        const items = commandList.querySelectorAll('.command-item');
+        query = query.toLowerCase();
+        
+        items.forEach(item => {
+          const command = commands.find(cmd => cmd.id === item.dataset.id);
+          const matches = command.name.toLowerCase().includes(query);
+          item.style.display = matches ? 'flex' : 'none';
+        });
+        
+        // Select first visible item
+        const firstVisible = commandList.querySelector('.command-item[style="display: flex"]');
+        if (firstVisible) {
+          items.forEach(item => item.classList.remove('selected'));
+          firstVisible.classList.add('selected');
+        }
+      }
+      
+      // Execute Command
+      function executeCommand(commandId) {
+        switch (commandId) {
+          case 'toggle-preview':
+            togglePreview();
+            break;
+          case 'export':
+            exportMarkdown();
+            break;
+          case 'summarize':
+            processAIAction('summarize');
+            break;
+          case 'expand':
+            processAIAction('expand');
+            break;
+          case 'analyze':
+            processAIAction('analyze');
+            break;
+          case 'deep-research':
+            processAIAction('deep-research');
+            break;
+          case 'rewrite':
+            processAIAction('rewrite');
+            break;
+          case 'brainstorm':
+            processAIAction('brainstorm');
+            break;
+          case 'professor-nihil':
+            processAIAction('professor-nihil');
+            break;
+          case 'change-mode':
+            changePhilosophicalMode();
+            break;
+        }
+      }
+      
+      // Toggle Preview
+      function togglePreview() {
+        isPreviewMode = !isPreviewMode;
+        
+        if (isPreviewMode) {
+          const markdown = editor.value;
+          content.innerHTML = `<div class="markdown">${renderMarkdown(markdown)}</div>`;
+        } else {
+          content.innerHTML = '';
+          content.appendChild(editor);
+        }
+      }
+      
+      // Export Markdown
+      function exportMarkdown() {
+        const markdown = editor.value;
+        const blob = new Blob([markdown], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'document.md';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      
+      // Simple Markdown Renderer
+      function renderMarkdown(text) {
+        return text
+          .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+          .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+          .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+          .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+          .replace(/\*(.*)\*/gim, '<em>$1</em>')
+          .replace(/\n/gim, '<br>');
+      }
+      
+      // Process AI Action
+      function processAIAction(action) {
+        selectedText = getSelectedText();
+        
+        if (!selectedText && action !== 'professor-nihil') {
+          selectedText = editor.value;
+        }
+        
+        if (!selectedText && action !== 'professor-nihil') {
+          alert('Please select some text or write content first.');
+          return;
+        }
+        
+        // Set modal title based on action
+        switch (action) {
+          case 'summarize':
+            aiModalTitle.textContent = 'Summary';
+            break;
+          case 'expand':
+            aiModalTitle.textContent = 'Expanded Content';
+            break;
+          case 'analyze':
+            aiModalTitle.textContent = 'Analysis';
+            break;
+          case 'deep-research':
+            aiModalTitle.textContent = 'Deep Research';
+            break;
+          case 'rewrite':
+            aiModalTitle.textContent = 'Rewritten Content';
+            break;
+          case 'brainstorm':
+            aiModalTitle.textContent = 'Brainstormed Ideas';
+            break;
+          case 'professor-nihil':
+            aiModalTitle.textContent = 'Professor Nihil';
+            break;
+        }
+        
+        // Show loading state
+        aiModalBody.innerHTML = '<p>Processing your request...</p>';
+        showAIModal();
+        
+        // Simulate AI processing (would be replaced with actual API call)
+        setTimeout(() => {
+          aiResponse = generateAIResponse(action, selectedText);
+          aiModalBody.innerHTML = aiResponse;
+        }, 1000);
+      }
+      
+      // Generate AI Response (simulation)
+      function generateAIResponse(action, text) {
+        // This would be replaced with actual API calls to OpenAI or similar
+        const responses = {
+          'summarize': `<h2>Summary</h2><p>Your text explores key themes related to nihilism and knowledge management. The central ideas focus on the integration of philosophical concepts with practical applications, emphasizing the importance of structured reflection and recursive analysis.</p>`,
+          
+          'expand': `<h2>Expanded Content</h2><p>${text}</p><p>This concept can be further developed by considering the historical context of nihilistic thought, from Nietzsche's proclamation of the death of God to contemporary existential philosophy. The integration of nihilism with knowledge systems represents not merely a philosophical stance but an ontological shift in how we understand the boundaries of meaning itself.</p><p>When we examine the void at the center of knowledge, we find not emptiness but potential—a space where new connections and insights can emerge precisely because they are not predetermined by existing structures.</p>`,
+          
+          'analyze': `<h2>Analysis</h2><p>Your text contains several interconnected themes:</p><ul><li>Epistemological questions about the nature of knowledge</li><li>Nihilistic perspectives on meaning and value</li><li>Practical considerations regarding information management</li></ul><p>The underlying structure suggests a dialectical approach to these questions, where opposing viewpoints are synthesized into a more comprehensive understanding. The tension between nihilism and knowledge creation forms a productive paradox worth exploring further.</p>`,
+          
+          'deep-research': `<h2>Deep Research: Nihilism and Knowledge</h2><p>Your inquiry touches on fundamental questions that span multiple philosophical traditions:</p><h3>Historical Context</h3><p>Nihilism emerged as a philosophical position in 19th century Europe, most notably through Nietzsche's work, but its roots can be traced to earlier skeptical traditions. The term itself comes from the Latin "nihil" (nothing), pointing to its central concern with nothingness and the absence of inherent meaning.</p><h3>Nihiltheistic Perspective</h3><p>The Nihiltheistic approach offers a unique lens, suggesting that the void between knowledge systems is not merely empty space but the generative ground from which new understanding emerges. This paradoxical foundation—where absence becomes presence—provides a framework for understanding how knowledge structures can simultaneously acknowledge meaninglessness while creating meaning.</p><h3>Contemporary Applications</h3><p>Modern thinkers like Ray Brassier, Eugene Thacker, and Thomas Ligotti have extended nihilistic thought into new domains, including speculative realism and horror philosophy. These approaches suggest that the confrontation with nothingness is not merely destructive but can be the basis for rigorous intellectual inquiry.</p>`,
+          
+          'rewrite': `<h2>Rewritten Content</h2><p>The Epistemology of Absence: Toward a Nihiltheistic Framework for Knowledge</p><p>This investigation examines the paradoxical relationship between nihilistic thought and knowledge creation. Rather than viewing nihilism as merely destructive, we position it as a generative void from which more authentic understanding can emerge. When knowledge acknowledges its own groundlessness, it achieves a peculiar kind of validity—one based not on correspondence to external reality but on internal coherence and pragmatic utility.</p>`,
+          
+          'brainstorm': `<h2>Brainstormed Ideas</h2><ul><li>The archaeology of nihilistic thought through history</li><li>Paradoxes of self-reference in nihilistic systems</li><li>The role of absence/void in creative thinking</li><li>Digital nihilism: technology as both creator and destroyer of meaning</li><li>Apophatic approaches to knowledge management</li><li>The ethics of nihilism in educational contexts</li><li>Phenomenology of the blank page as nihilistic space</li><li>Temporal aspects of meaning-making in nihilistic frameworks</li></ul>`,
+          
+          'professor-nihil': generatePhilosophicalResponse(text)
+        };
+        
+        return responses[action] || `<p>I've processed your request to ${action.replace('-', ' ')} the content. The results reveal deeper patterns and connections that might not be immediately apparent on the surface.</p>`;
+      }
+      
+      // Generate Philosophical Response based on mode
+      function generatePhilosophicalResponse(text) {
+        const prompt = text || 'What is the nature of existence?';
+        
+        const responses = {
+          'Recursive-Dialectic': `<h2>Professor Nihil: Recursive-Dialectic Mode</h2><p>Your inquiry about "${prompt}" invites a recursive examination. Each answer generates new questions, leading us deeper into the paradoxical nature of existence. The question itself contains its own negation, revealing how meaning emerges from the tension between assertion and denial.</p><p>Consider how the very act of questioning presupposes both presence and absence—the presence of the questioner and the absence of the answer. This dialectical movement never resolves into a final synthesis but continues to unfold in an infinite recursive loop.</p>`,
+          
+          'Ontological-Collapse': `<h2>Professor Nihil: Ontological-Collapse Mode</h2><p>Considering "${prompt}" through the lens of ontological collapse reveals how the distinction between Being and Nothingness ultimately breaks down. The void is not merely absence, but the foundation from which all phenomena emerge and to which they return.</p><p>When we examine any concept closely enough, its boundaries dissolve, and we experience the vertigo of groundlessness. Yet this collapse is not a failure but an opening—a clearing where authentic thought becomes possible precisely because it acknowledges its own contingency.</p>`,
+          
+          'Apophatic-Synthesis': `<h2>Professor Nihil: Apophatic-Synthesis Mode</h2><p>To approach "${prompt}" apophatically, we must first recognize what it is not. By negating conventional understandings, we create space for a deeper truth to emerge—one that transcends the limitations of positive assertion and embraces the ineffable nature of reality.</p><p>The apophatic tradition teaches us that truth is best approached through negation. By systematically removing what is false or contingent, we don't arrive at emptiness but at a more fundamental understanding that cannot be directly articulated but can be gestured toward.</p>`,
+          
+          'Mythopoetic-Logic': `<h2>Professor Nihil: Mythopoetic-Logic Mode</h2><p>"${prompt}" resonates with the mythopoetic dimension of existence. Like Orpheus descending into the underworld, this inquiry leads us through symbolic terrain where rational categories dissolve and narrative truth emerges from the sacred void.</p><p>The myths we create are not mere fictions but structures of meaning that allow us to navigate the abyss. Through symbolic language and narrative patterns, we transform the raw experience of nothingness into a journey with significance, even as we recognize the constructed nature of this significance.</p>`
+        };
+        
+        return responses[currentPhilosophicalMode] || responses['Recursive-Dialectic'];
+      }
+      
+      // Change Philosophical Mode
+      function changePhilosophicalMode() {
+        const currentIndex = philosophicalModes.indexOf(currentPhilosophicalMode);
+        const nextIndex = (currentIndex + 1) % philosophicalModes.length;
+        currentPhilosophicalMode = philosophicalModes[nextIndex];
+        
+        // Update mode indicator
+        document.querySelector('#mode-indicator span').textContent = currentPhilosophicalMode;
+        
+        // Show temporary notification
+        showShortcutDisplay(`Mode changed to ${currentPhilosophicalMode}`);
+      }
+      
+      // Get Selected Text
+      function getSelectedText() {
+        return editor.value.substring(editor.selectionStart, editor.selectionEnd);
+      }
+      
+      // Show AI Menu
+      function showAIMenu() {
+        const rect = aiButton.getBoundingClientRect();
+        aiMenu.style.top = `${rect.bottom + window.scrollY}px`;
+        aiMenu.style.right = `${window.innerWidth - rect.right}px`;
+        aiMenu.classList.add('visible');
+      }
+      
+      // Hide AI Menu
+      function hideAIMenu() {
+        aiMenu.classList.remove('visible');
+      }
+      
+      // Show Context Menu
+      function showContextMenu(x, y) {
+        contextMenu.style.left = `${x}px`;
+        contextMenu.style.top = `${y}px`;
+        contextMenu.classList.add('visible');
+      }
+      
+      // Hide Context Menu
+      function hideContextMenu() {
+        contextMenu.classList.remove('visible');
+      }
+      
+      // Show Floating Toolbar
+      function showFloatingToolbar() {
+        const selection = window.getSelection();
+        
+        if (selection.toString().trim() !== '') {
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          
+          floatingToolbar.style.left = `${rect.left + (rect.width / 2) - (floatingToolbar.offsetWidth / 2)}px`;
+          floatingToolbar.style.top = `${rect.top - floatingToolbar.offsetHeight - 10}px`;
+          floatingToolbar.classList.add('visible');
+        }
+      }
+      
+      // Hide Floating Toolbar
+      function hideFloatingToolbar() {
+        floatingToolbar.classList.remove('visible');
+      }
+      
+      // Show AI Modal
+      function showAIModal() {
+        aiModal.classList.add('visible');
+      }
+      
+      // Hide AI Modal
+      function hideAIModal() {
+        aiModal.classList.remove('visible');
+      }
+      
+      // Show Shortcut Display
+      function showShortcutDisplay(text) {
+        shortcutDisplay.textContent = text;
+        shortcutDisplay.classList.add('visible');
+        
+        setTimeout(() => {
+          shortcutDisplay.classList.remove('visible');
+        }, 2000);
+      }
+      
+      // Event Listeners
+      
+      // AI Button
+      aiButton.addEventListener('click', () => {
+        if (aiMenu.classList.contains('visible')) {
+          hideAIMenu();
+        } else {
+          showAIMenu();
+        }
+      });
+      
+      // AI Menu Items
+      document.querySelectorAll('.ai-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const action = item.dataset.action;
+          processAIAction(action);
+          hideAIMenu();
+        });
+      });
+      
+      // Context Menu Items
+      document.querySelectorAll('.context-menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+          if (item.dataset.action) {
+            const action = item.dataset.action;
+            processAIAction(action);
+          }
+          hideContextMenu();
+        });
+      });
+      
+      // Floating Toolbar Buttons
+      document.querySelectorAll('.floating-button').forEach(button => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.action;
+          processAIAction(action);
+          hideFloatingToolbar();
+        });
+      });
+      
+      // Toggle Preview Button
+      togglePreviewBtn.addEventListener('click', togglePreview);
+      
+      // Export Button
+      exportBtn.addEventListener('click', exportMarkdown);
+      
+      // AI Modal Close
+      aiModalClose.addEventListener('click', hideAIModal);
+      aiModalCloseBtn.addEventListener('click', hideAIModal);
+      
+      // AI Modal Insert
+      aiModalInsert.addEventListener('click', () => {
+        if (aiResponse) {
+          // Extract text content from HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = aiResponse;
+          const textContent = tempDiv.textContent;
+          
+          // Insert at cursor position or replace selection
+          const cursorPos = editor.selectionStart;
+          const endPos = editor.selectionEnd;
+          
+          editor.value = editor.value.substring(0, cursorPos) + 
+                         textContent + 
+                         editor.value.substring(endPos);
+          
+          hideAIModal();
+        }
+      });
+      
+      // Command Input
+      commandInput.addEventListener('input', () => {
+        filterCommands(commandInput.value);
+      });
+      
+      commandInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          const selected = commandList.querySelector('.command-item.selected');
+          if (selected) {
+            executeCommand(selected.dataset.id);
+            hideCommandPalette();
+          }
+        } else if (e.key === 'Escape') {
+          hideCommandPalette();
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          const selected = commandList.querySelector('.command-item.selected');
+          const visible = Array.from(commandList.querySelectorAll('.command-item[style="display: flex"]'));
+          
+          if (selected && visible.length > 0) {
+            const currentIndex = visible.indexOf(selected);
+            const nextIndex = (currentIndex + 1) % visible.length;
+            selected.classList.remove('selected');
+            visible[nextIndex].classList.add('selected');
+            visible[nextIndex].scrollIntoView({ block: 'nearest' });
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          const selected = commandList.querySelector('.command-item.selected');
+          const visible = Array.from(commandList.querySelectorAll('.command-item[style="display: flex"]'));
+          
+          if (selected && visible.length > 0) {
+            const currentIndex = visible.indexOf(selected);
+            const prevIndex = (currentIndex - 1 + visible.length) % visible.length;
+            selected.classList.remove('selected');
+            visible[prevIndex].classList.add('selected');
+            visible[prevIndex].scrollIntoView({ block: 'nearest' });
+          }
+        }
+      });
+      
+      // Editor Selection
+      editor.addEventListener('mouseup', () => {
+        if (window.getSelection().toString().trim() !== '') {
+          showFloatingToolbar();
+        } else {
+          hideFloatingToolbar();
+        }
+      });
+      
+      editor.addEventListener('keyup', e => {
+        // Only show floating toolbar if selection exists and not navigating
+        if (window.getSelection().toString().trim() !== '' && 
+            !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+          showFloatingToolbar();
+        } else {
+          hideFloatingToolbar();
+        }
+      });
+      
+      // Context Menu
+      editor.addEventListener('contextmenu', e => {
+        e.preventDefault();
+        showContextMenu(e.pageX, e.pageY);
+      });
+      
+      // Click outside to close menus
+      document.addEventListener('click', e => {
+        if (!aiButton.contains(e.target) && !aiMenu.contains(e.target)) {
+          hideAIMenu();
+        }
+        
+        if (!contextMenu.contains(e.target)) {
+          hideContextMenu();
+        }
+        
+        if (aiModal.classList.contains('visible') && 
+            !aiModalClose.contains(e.target) && 
+            !aiModalCloseBtn.contains(e.target) &&
+            !aiModalInsert.contains(e.target) &&
+            e.target !== aiModal && 
+            !aiModal.querySelector('.ai-modal-content').contains(e.target)) {
+          hideAIModal();
+        }
+      });
+      
+      // Global Keyboard Shortcuts
+      document.addEventListener('keydown', e => {
+        // Command Palette: Ctrl+P
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+          e.preventDefault();
+          showCommandPalette();
+        }
+        
+        // Toggle Preview: Alt+P
+        if (e.altKey && e.key === 'p') {
+          e.preventDefault();
+          togglePreview();
+        }
+        
+        // Export: Alt+E
+        if (e.altKey && e.key === 'e') {
+          e.preventDefault();
+          exportMarkdown();
+        }
+        
+        // Summarize: Alt+S
+        if (e.altKey && e.key === 's') {
+          e.preventDefault();
+          processAIAction('summarize');
+        }
+        
+        // Expand: Alt+X
+        if (e.altKey && e.key === 'x') {
+          e.preventDefault();
+          processAIAction('expand');
+        }
+        
+        // Analyze: Alt+A
+        if (e.altKey && e.key === 'a') {
+          e.preventDefault();
+          processAIAction('analyze');
+        }
+        
+        // Deep Research: Alt+D
+        if (e.altKey && e.key === 'd') {
+          e.preventDefault();
+          processAIAction('deep-research');
+        }
+        
+        // Rewrite: Alt+R
+        if (e.altKey && e.key === 'r') {
+          e.preventDefault();
+          processAIAction('rewrite');
+        }
+        
+        // Brainstorm: Alt+B
+        if (e.altKey && e.key === 'b') {
+          e.preventDefault();
+          processAIAction('brainstorm');
+        }
+        
+        // Professor Nihil: Alt+N
+        if (e.altKey && e.key === 'n') {
+          e.preventDefault();
+          processAIAction('professor-nihil');
+        }
+        
+        // Change Mode: Alt+M
+        if (e.altKey && e.key === 'm') {
+          e.preventDefault();
+          changePhilosophicalMode();
+        }
+        
+        // Escape to close modals and menus
+        if (e.key === 'Escape') {
+          hideAIMenu();
+          hideContextMenu();
+          hideFloatingToolbar();
+          hideAIModal();
+          hideCommandPalette();
+        }
+      });
+      
+      // Show keyboard shortcut hint on startup
+      setTimeout(() => {
+        showShortcutDisplay('Press <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">P</span> for Command Palette');
+      }, 1000);
+      
+      // Initialize
+      initCommandPalette();
+    });
+  </script>
+</body>
+</html>

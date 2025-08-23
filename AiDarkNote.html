@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paralyzing Nihilism - AI Enhanced</title>
+  <style>
+    :root {
+      --foundation: #1a1a1a;
+      --panel-bg: rgba(25, 25, 25, 0.8);
+      --header-bg: rgba(40, 40, 40, 0.9);
+      --gunmetal-light: #8B9DC3;
+      --gunmetal-dark: #5A6B73;
+      --text-light: #e0e0e0;
+      --text-muted: #8b8b8b;
+      --border-color: #444;
+      --accent-gradient: linear-gradient(135deg, #5A6B73 0%, #8B9DC3 100%);
+      --readable-width: 800px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 0; font-family: 'Courier New', monospace;
+      display: flex; flex-direction: column; height: 100vh;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: var(--text-light); overflow: hidden;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 15px 25px; background: var(--header-bg);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px);
+      position: relative; z-index: 100; transition: transform 0.3s ease;
+    }
+    .header-left { display: flex; align-items: center; }
+    .nav-button {
+      margin-right: 25px; cursor: pointer; background: none; border: none;
+      font-size: 18px; color: var(--text-muted); transition: color 0.3s ease;
+    }
+    .nav-button:hover { color: var(--text-light); }
+    .page-title { font-size: 20px; font-weight: 300; letter-spacing: 1px; color: #d4d4d4; }
+    .ai-toggle {
+      background: var(--accent-gradient); border: none; color: white; padding: 8px 16px;
+      border-radius: 6px; cursor: pointer; font-size: 14px; font-family: 'Courier New', monospace;
+      transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(90, 107, 115, 0.3);
+    }
+    .ai-toggle:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(90, 107, 115, 0.5); }
+    .nav-links {
+      display: none; flex-direction: column; position: absolute; top: 60px;
+      left: 25px; background: rgba(50, 50, 50, 0.95); border-radius: 8px;
+      z-index: 10; overflow: hidden; backdrop-filter: blur(10px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+    .nav-links a {
+      padding: 12px 20px; text-decoration: none; color: var(--text-muted);
+      border-bottom: 1px solid rgba(80, 80, 80, 0.3); transition: all 0.3s ease;
+    }
+    .nav-links a:hover { background: rgba(90, 107, 115, 0.2); color: var(--text-light); }
+    .main-container { display: flex; flex: 1; overflow: hidden; }
+    .journal-section { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .controls {
+      display: flex; justify-content: center; gap: 10px; margin: 10px 20px;
+      flex-wrap: wrap; transition: opacity 0.3s ease;
+    }
+    .controls button {
+      background: none; border: 1px solid var(--border-color); color: #ccc; padding: 6px 12px;
+      font-size: 14px; border-radius: 4px; cursor: pointer; transition: all 0.3s ease;
+      font-family: 'Courier New', monospace;
+    }
+    .controls button:hover { background: rgba(255, 255, 255, 0.05); color: #fff; border-color: #666; }
+    
+    #journal-container {
+      flex: 1;
+      display: flex;
+      margin: 0 20px 20px;
+      border-radius: 8px;
+      background: var(--panel-bg);
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #journal-editor, #markdown-preview {
+      height: 100%;
+      border: none;
+      background: transparent;
+      color: var(--text-light);
+      font-size: 16px;
+      line-height: 1.6;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+      overflow-y: auto;
+      transition: width 0.3s ease;
+    }
+
+    #journal-editor {
+        width: 100%;
+        resize: none;
+    }
+
+    #markdown-preview {
+        display: none;
+        width: 0%;
+        border-left: 1px solid var(--border-color);
+    }
+    
+    #journal-container.side-by-side-view #journal-editor {
+        width: 50%;
+    }
+    #journal-container.side-by-side-view #markdown-preview {
+        display: block;
+        width: 50%;
+    }
+    
+    /* Readable Line Length */
+    #journal-editor, #markdown-preview .preview-content {
+        max-width: var(--readable-width);
+        margin: 0 auto;
+    }
+    
+    #journal-container.side-by-side-view #journal-editor,
+    #journal-container.side-by-side-view #markdown-preview {
+        max-width: 100%; /* Override max-width for side-by-side view */
+        margin: 0;
+    }
+
+    #journal-editor:focus { outline: none; }
+    #journal-editor::placeholder { color: #666; font-style: italic; }
+
+    #markdown-preview h1, #markdown-preview h2, #markdown-preview h3,
+    #markdown-preview h4, #markdown-preview h5, #markdown-preview h6 { color: var(--gunmetal-light); margin: 20px 0 10px 0; }
+    #markdown-preview p { margin-bottom: 1em; }
+    #markdown-preview strong { color: var(--gunmetal-dark); }
+    #markdown-preview em { color: #a0a0a0; font-style: italic; }
+    .ai-panel {
+      width: 400px; background: rgba(40, 40, 40, 0.95); border-left: 2px solid var(--gunmetal-dark);
+      display: none; flex-direction: column; backdrop-filter: blur(10px);
+      box-shadow: -8px 0 25px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease;
+    }
+    .ai-panel.active { display: flex; }
+    .ai-header { padding: 20px; background: var(--accent-gradient); color: white; text-align: center; font-weight: bold; letter-spacing: 1px; }
+    .ai-tools { flex: 1; overflow-y: auto; padding: 0; }
+    .ai-tool { border-bottom: 1px solid rgba(90, 107, 115, 0.2); transition: all 0.3s ease; }
+    .ai-tool:hover { background: rgba(90, 107, 115, 0.1); }
+    .ai-tool-header {
+      padding: 15px 20px; display: flex; align-items: center; gap: 12px; border: none;
+      background: none; color: var(--text-light); width: 100%; text-align: left;
+      font-family: 'Courier New', monospace; font-size: 14px; cursor: pointer;
+    }
+    .ai-tool-icon { font-size: 18px; color: var(--gunmetal-light); }
+    .ai-tool-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; background: rgba(25, 25, 25, 0.5); }
+    .ai-tool.expanded .ai-tool-content { max-height: 500px; }
+    .ai-tool-inner { padding: 20px; }
+    .ai-input {
+      width: 100%; background: rgba(40, 40, 40, 0.8); border: 1px solid var(--gunmetal-dark);
+      color: var(--text-light); padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace;
+      font-size: 13px; margin-bottom: 12px; resize: vertical; min-height: 80px;
+    }
+    .ai-input:focus { outline: none; border-color: var(--gunmetal-light); box-shadow: 0 0 8px rgba(139, 157, 195, 0.3); }
+    .ai-button {
+      background: var(--accent-gradient); border: none; color: white; padding: 8px 16px;
+      border-radius: 4px; cursor: pointer; font-size: 12px; font-family: 'Courier New', monospace;
+      transition: all 0.3s ease; margin-right: 8px; margin-bottom: 8px;
+    }
+    .ai-button:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(90, 107, 115, 0.4); }
+    .ai-output {
+      background: rgba(25, 25, 25, 0.8); border: 1px solid #444; color: var(--text-light);
+      padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace;
+      font-size: 13px; line-height: 1.5; max-height: 200px; overflow-y: auto;
+      margin-top: 12px; white-space: pre-wrap;
+    }
+    .copy-button {
+      background: rgba(90, 107, 115, 0.3); border: 1px solid var(--gunmetal-dark);
+      color: var(--gunmetal-light); padding: 4px 8px; border-radius: 3px; cursor: pointer;
+      font-size: 11px; font-family: 'Courier New', monospace; margin-top: 8px;
+      transition: all 0.3s ease;
+    }
+    .copy-button:hover { background: rgba(90, 107, 115, 0.5); color: var(--text-light); }
+    footer {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 15px 25px; background: var(--header-bg);
+      box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px);
+      transition: transform 0.3s ease;
+    }
+    .footer-content { display: flex; align-items: center; gap: 20px; }
+    .footer-text, .word-count, .shortcuts-help { font-size: 14px; color: var(--text-muted); font-style: italic; }
+    .shortcuts-help { cursor: pointer; font-style: normal; text-decoration: underline; }
+    .arrows { display: flex; gap: 15px; }
+    .arrow { cursor: pointer; font-size: 16px; color: var(--text-muted); text-decoration: none; transition: color 0.3s ease; }
+    .arrow:hover { color: var(--gunmetal-light); }
+    .ai-loading {
+      display: inline-block; width: 20px; height: 20px; border: 2px solid rgba(139, 157, 195, 0.3);
+      border-radius: 50%; border-top-color: var(--gunmetal-light); animation: spin 1s ease-in-out infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
+      align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-content {
+      background: var(--header-bg); padding: 30px; border-radius: 8px;
+      border: 1px solid var(--border-color); width: 90%; max-width: 500px;
+    }
+    .modal-content h2 { color: var(--gunmetal-light); margin-bottom: 20px; }
+    .modal-content ul { list-style: none; padding-left: 0; }
+    .modal-content li { margin-bottom: 10px; display: flex; justify-content: space-between; }
+    .modal-content code { background: var(--panel-bg); padding: 2px 6px; border-radius: 4px; color: var(--gunmetal-light); }
+    body.focus-mode header, body.focus-mode footer, body.focus-mode .controls { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+    body.focus-mode footer { transform: translateY(100%); }
+    body.focus-mode .ai-panel { transform: translateX(100%); }
+    body.focus-mode .main-container { padding: 0; }
+    body.focus-mode #journal-container { margin: 0; border-radius: 0; height: 100vh; }
+    @media (max-width: 768px) {
+      .main-container { flex-direction: column; }
+      .ai-panel { width: 100%; max-height: 50vh; border-left: none; border-top: 2px solid var(--gunmetal-dark); }
+      header { flex-direction: column; gap: 10px; align-items: flex-start; }
+      .header-left { width: 100%; justify-content: space-between; }
+      footer { flex-direction: column; align-items: center; gap: 10px; }
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(40, 40, 40, 0.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(90, 107, 115, 0.5); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(90, 107, 115, 0.7); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <button class="nav-button" onclick="toggleNav()">☰</button>
+      <div class="page-title" id="pageTitle"></div>
+    </div>
+    <button class="ai-toggle" onclick="toggleAI()">🧠 AI Assistant</button>
+  </header>
+
+  <div class="nav-links" id="navLinks">
+    </div>
+
+  <div class="main-container">
+    <div class="journal-section">
+      <div class="controls">
+        <button onclick="togglePreview()">Toggle Preview</button>
+        <button onclick="exportMarkdown()">Export .md</button>
+        <button onclick="clearEditor()">New Note (in section)</button>
+        <button onclick="insertTimestamp()">Timestamp</button>
+        <button onclick="toggleFocusMode()">Focus Mode</button>
+      </div>
+
+      <div id="journal-container">
+        <textarea id="journal-editor" placeholder="# Begin your existential chronicle..."></textarea>
+        <div id="markdown-preview"><div class="preview-content"></div></div>
+      </div>
+    </div>
+
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-header">
+        ⚡ Philosophical AI Assistant
+      </div>
+      
+      <div class="ai-tools">
+        
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">✨</span>
+            <span>Expand Thoughts</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste a sentence or leave blank to use selection..."></textarea>
+              <button class="ai-button" onclick="expandThoughts(this)">Expand</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🧠</span>
+            <span>Generate Ideas</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Enter a theme or topic..."></textarea>
+              <button class="ai-button" onclick="generateIdeas(this)">Generate</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">📝</span>
+            <span>Writing Prompts</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <button class="ai-button" onclick="generatePrompt(this)">Existential</button>
+              <button class="ai-button" onclick="generatePrompt(this, 'nihilistic')">Nihilistic</button>
+              <button class="ai-button" onclick="generatePrompt(this, 'consciousness')">Consciousness</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">✏️</span>
+            <span>Improve Writing</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste text to enhance..."></textarea>
+              <button class="ai-button" onclick="improveWriting(this)">Improve</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🔍</span>
+            <span>Analyze Content</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste text to analyze..."></textarea>
+              <button class="ai-button" onclick="analyzeContent(this)">Analyze</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">⚡</span>
+            <span>Counter-Perspective</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Present an argument to contradict..."></textarea>
+              <button class="ai-button" onclick="generateCounter(this)">Generate</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">📚</span>
+            <span>Concept Explorer</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Enter a philosophical concept..."></textarea>
+              <button class="ai-button" onclick="exploreConcept(this)">Explore</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🎯</span>
+            <span>Summarize</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste long text to summarize..."></textarea>
+              <button class="ai-button" onclick="summarizeText(this)">Summarize</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🏷️</span>
+            <span>Generate Tags</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste text to generate tags..."></textarea>
+              <button class="ai-button" onclick="generateTags(this)">Generate</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">💭</span>
+            <span>Reflection Questions</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Share thoughts for reflection questions..."></textarea>
+              <button class="ai-button" onclick="generateQuestions(this)">Generate</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer>
+      <div class="footer-content">
+          <div class="footer-text">The Religious Experience of Nihilism</div>
+          <div class="word-count" id="wordCount">0 words, 0 characters</div>
+          <div class="shortcuts-help" onclick="toggleShortcutsModal()">?</div>
+      </div>
+      <div class="arrows">
+        <a href="#prev" class="arrow" onclick="previousPage()">← Previous</a>
+        <a href="#next" class="arrow" onclick="nextPage()">Next →</a>
+      </div>
+  </footer>
+  
+  <div class="modal-overlay" id="shortcutsModal" onclick="toggleShortcutsModal()">
+      <div class="modal-content" onclick="event.stopPropagation()">
+          <h2>Keyboard Shortcuts</h2>
+          <ul>
+              <li><span>Save current note</span><code>Ctrl/Cmd + S</code></li>
+              <li><span>Export as .md</span><code>Ctrl/Cmd + E</code></li>
+              <li><span>Toggle Preview</span><code>Ctrl/Cmd + P</code></li>
+              <li><span>Toggle AI Assistant</span><code>Ctrl/Cmd + I</code></li>
+              <li><span>Toggle Focus Mode</span><code>ESC</code></li>
+          </ul>
+      </div>
+  </div>
+
+
+  <script>
+    const editor = document.getElementById('journal-editor');
+    const preview = document.getElementById('markdown-preview');
+    const previewContent = preview.querySelector('.preview-content');
+    const aiPanel = document.getElementById('aiPanel');
+    const pageTitle = document.getElementById('pageTitle');
+    const navLinksContainer = document.getElementById('navLinks');
+    const wordCountEl = document.getElementById('wordCount');
+    
+    const pages = [
+        { id: 'nihilism-preface', title: 'Nihilism Preface' },
+        { id: 'abyssal-experience', title: 'The Abyssal Experience of Nihilism' },
+        { id: 'uncanny-illusion', title: 'The Uncanny Illusion of Naturalism' },
+        { id: 'madness-nonexistence', title: 'Madness, Nonexistence, and the Other' },
+        { id: 'infinite-nothingness', title: 'The Startling Encounter with Infinite Nothingness' },
+        { id: 'symbolic-resonance', title: 'The Symbolic Resonance of Nothing' },
+    ];
+    let currentPageId = pages[0].id;
+    let isAIOpen = false;
+    let isPreviewing = false;
+
+    function populateNav() {
+        navLinksContainer.innerHTML = pages.map(p => 
+            `<a href="#${p.id}" onclick="selectPage('${p.id}')">${p.title}</a>`
+        ).join('');
+    }
+
+    function toggleNav() {
+      const nav = document.getElementById('navLinks');
+      nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function toggleAI() {
+      isAIOpen = !isAIOpen;
+      aiPanel.classList.toggle('active', isAIOpen);
+      document.querySelector('.ai-toggle').textContent = isAIOpen ? '✖ Close AI' : '🧠 AI Assistant';
+    }
+
+    function toggleTool(button) {
+      const tool = button.parentElement;
+      const isExpanded = tool.classList.contains('expanded');
+      document.querySelectorAll('.ai-tool.expanded').forEach(t => {
+        if (t !== tool) t.classList.remove('expanded');
+      });
+      tool.classList.toggle('expanded', !isExpanded);
+    }
+    
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function updatePreview() {
+        if (isPreviewing) {
+            const text = editor.value;
+            preview.innerHTML = renderMarkdown(text);
+        }
+    }
+
+    function togglePreview() {
+      isPreviewing = !isPreviewing;
+      const container = document.getElementById('journal-container');
+      container.classList.toggle('side-by-side-view', isPreviewing);
+      if (isPreviewing) {
+        updatePreview();
+      }
+    }
+    
+    function renderMarkdown(md) {
+        // More robust markdown parser
+        let html = '';
+        const lines = md.split('\n');
+        let inParagraph = false;
+
+        for (let line of lines) {
+            if (line.match(/^# (.*$)/)) {
+                html += `<h1>${line.substring(2)}</h1>`; inParagraph = false;
+            } else if (line.match(/^## (.*$)/)) {
+                html += `<h2>${line.substring(3)}</h2>`; inParagraph = false;
+            } else if (line.match(/^### (.*$)/)) {
+                html += `<h3>${line.substring(4)}</h3>`; inParagraph = false;
+            } else if (line.trim() === '') {
+                if (inParagraph) html += '</p>';
+                inParagraph = false;
+            } else {
+                if (!inParagraph) html += '<p>';
+                inParagraph = true;
+                line = line
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                html += line + ' ';
+            }
+        }
+        if (inParagraph) html += '</p>';
+        return html;
+    }
+
+
+    function exportMarkdown() {
+      const timestamp = new Date().toISOString().slice(0,10);
+      const filename = `${slugify(pageTitle.textContent)}-${timestamp}.md`;
+      const blob = new Blob([editor.value], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearEditor() {
+      if (confirm('Start a new note in this section? The current content will be cleared.')) {
+        editor.value = '';
+        saveToStorage();
+        updateWordCount();
+      }
+    }
+
+    function insertTimestamp() {
+      const timestamp = new Date().toLocaleString();
+      const text = `\n\n---\n${timestamp}\n\n`;
+      insertAtCursor(text);
+    }
+
+    function insertAtCursor(text) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const value = editor.value;
+      editor.value = value.slice(0, start) + text + value.slice(end);
+      editor.selectionStart = editor.selectionEnd = start + text.length;
+      editor.focus();
+      saveToStorage();
+    }
+    
+    function insertAtTop(text) {
+        editor.value = text + '\n\n' + editor.value;
+        editor.focus();
+        saveToStorage();
+    }
+
+    function insertAtEnd(text) {
+        editor.value = editor.value + '\n\n' + text;
+        editor.focus();
+        saveToStorage();
+    }
+
+    function selectPage(pageId) {
+      saveToStorage();
+      currentPageId = pageId;
+      loadFromStorage();
+      const page = pages.find(p => p.id === pageId);
+      pageTitle.textContent = page ? page.title : 'Notes';
+      document.getElementById('navLinks').style.display = 'none';
+    }
+
+    function findCurrentPageIndex() {
+        return pages.findIndex(p => p.id === currentPageId);
+    }
+
+    function previousPage() {
+      const currentIndex = findCurrentPageIndex();
+      const prevIndex = (currentIndex - 1 + pages.length) % pages.length;
+      selectPage(pages[prevIndex].id);
+    }
+
+    function nextPage() {
+      const currentIndex = findCurrentPageIndex();
+      const nextIndex = (currentIndex + 1) % pages.length;
+      selectPage(pages[nextIndex].id);
+    }
+
+    function saveToStorage() {
+      localStorage.setItem(`nihilNotes_${currentPageId}`, editor.value);
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem(`nihilNotes_${currentPageId}`);
+      const page = pages.find(p => p.id === currentPageId);
+      const defaultText = `# ${page.title}\n\nThe void beckons...`;
+      editor.value = saved || defaultText;
+      updateWordCount();
+      updatePreview();
+    }
+    
+    function updateWordCount() {
+        const text = editor.value;
+        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+        const chars = text.length;
+        wordCountEl.textContent = `${words} words, ${chars} characters`;
+    }
+    
+    function toggleShortcutsModal() {
+        const modal = document.getElementById('shortcutsModal');
+        modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+    }
+    
+    let isFocusMode = false;
+    function toggleFocusMode() {
+        isFocusMode = !isFocusMode;
+        document.body.classList.toggle('focus-mode', isFocusMode);
+    }
+    
+    const philosophicalResponses = {
+      expandThoughts: [
+        "The paradox of existence reveals itself in the tension between our desperate search for meaning and the universe's apparent indifference to our plight. Consider how this very act of seeking meaning might itself be the meaning we seek—a recursive loop of consciousness examining itself, like Ouroboros consuming its own tail in an eternal dance of self-reflection.",
+        "What emerges here is the fundamental contradiction of human consciousness: we are beings capable of conceiving infinity while trapped within finite existence. This cognitive dissonance creates the space where philosophy flourishes—in the gap between what we can imagine and what we can actually comprehend.",
+        "The absurdity lies not in the lack of inherent meaning, but in our persistent belief that meaning must be inherent rather than constructed. We are architects of significance in a universe that provides only raw materials—consciousness, time, and the strange capacity to question our own questioning."
+      ],
+      generateIdeas: [
+        "• The Archaeology of Lost Thoughts: Excavating the ideas we've forgotten we once knew\n• Temporal Anxiety: How our relationship with time shapes our sense of self\n• The Ethics of Existing: Whether continuing to exist is itself a moral choice\n• Consciousness as Cosmic Error: Exploring the possibility that awareness is an aberration\n• The Aesthetics of Decay: Finding beauty in entropy and dissolution",
+        "• The Silence Between Words: What exists in the gaps of language and thought\n• Inherited Suffering: How we carry the pain of previous generations\n• The Democracy of Meaninglessness: If nothing matters, does everything matter equally?\n• Digital Dualism: The split between our online and offline selves\n• The Philosophy of Forgetting: The necessity and tragedy of memory loss",
+      ],
+      writingPrompts: {
+        existential: [
+          "Write about a moment when you realized that your entire identity might be a carefully constructed illusion. What happens when the stories you tell yourself about yourself begin to unravel?",
+          "Imagine discovering that every decision you've ever made was actually made by a future version of yourself reaching back through time. How does this change your sense of agency and responsibility?",
+        ],
+        nihilistic: [
+          "If you learned that the universe would end in exactly 24 hours and no one would remember anything that ever happened, how would you spend your final day? What does this reveal about what you truly value?",
+          "Write about trying to explain the concept of hope to an alien intelligence that has never experienced suffering or loss. How do you justify optimism in a fundamentally indifferent universe?",
+        ],
+        consciousness: [
+          "What if your consciousness is actually a shared experience—that every human is experiencing the same singular awareness from different perspectives? Explore this possibility and its implications.",
+          "Write about the moment when you first became aware that you were aware. How did this meta-cognitive recognition change your relationship with your own mind?",
+        ]
+      },
+      improveWriting: [
+        "ENHANCED VERSION:\n\nThe existential weight of this observation deepens when we consider the recursive nature of self-examination. Your original insight reveals the fundamental paradox of consciousness—we are simultaneously the observer and the observed, trapped in an endless hall of mirrors where each reflection reveals new layers of complexity. The very act of questioning our existence becomes another layer of existence to question, creating an infinite regress that mirrors the mathematical concept of strange loops in cognitive science.",
+        "REFINED PERSPECTIVE:\n\nThis thought gains philosophical gravitas when reframed through the lens of phenomenological inquiry. The essence of your observation touches upon what Heidegger termed 'thrownness'—our condition of being hurled into existence without our consent or clear purpose. The anxiety you describe is not merely emotional but ontological—a fundamental uncertainty about the nature of being itself. Consider how this uncertainty might not be a problem to solve but a condition to embrace as the very foundation of authentic existence.",
+      ],
+      analyzeContent: [
+        "THEMATIC ANALYSIS:\n\nCore philosophical themes present:\n• Existential anxiety and the search for authentic being\n• The paradox of consciousness examining itself\n• Temporal anxiety—our relationship with mortality and finitude\n• The construction vs. discovery of meaning\n\nThe text demonstrates a sophisticated grappling with what philosophers call 'the hard problem of consciousness'—how subjective experience arises from objective processes.",
+        "CONCEPTUAL MAPPING:\n\nThe argument structure reveals:\n1. Initial observation or experience\n2. Recognition of paradox or contradiction\n3. Attempt to reconcile opposing forces\n4. Deepening of complexity rather than resolution\n\nThis pattern mirrors the philosophical method of dialectical thinking, where thesis meets antithesis to produce synthesis—but here the synthesis itself becomes a new thesis, creating ongoing dialectical movement.",
+      ],
+      generateCounter: [
+        "COUNTER-PERSPECTIVE:\n\nWhile your argument assumes that meaning must be either inherent or constructed, consider a third possibility: meaning as emergent property. Perhaps meaning arises naturally from the interaction between conscious beings and their environment, neither imposed by cosmic design nor artificially created by human will. This challenges the binary thinking that underlies much existential angst.",
+        "DIALECTICAL OPPOSITION:\n\nThe very fact that you can conceive of meaninglessness might prove meaning's existence. To recognize absence, you must first understand presence. Your ability to feel existential dread suggests that you possess some template for existential fulfillment. Your nihilistic conclusion might be a philosophical luxury afforded by a life so rich with meaning that you can temporarily afford to deny it."
+      ],
+      exploreConcept: [
+        "DEEP DIVE: The Absurd\n\nThe absurd, as Camus conceived it, is not simply nonsensical but represents the fundamental collision between human need for rational understanding and the universe's resistance to such understanding. It's the experience of asking 'Why?' and receiving only silence in return.\n\nHistorical evolution:\n• Kierkegaard: The absurd as the collision between faith and reason\n• Camus: The absurd as the collision between human need for meaning and cosmic indifference\n\nThe absurd is not a problem to be solved but a condition to be lived.",
+        "CONCEPTUAL EXPLORATION: Authenticity\n\nAuthenticity emerges from the existentialist tradition as both a goal and a paradox. To be authentic means to be true to one's 'essence'—but existentialism claims we have no predetermined essence. The paradox deepens: The more you try to be authentic, the more performative authenticity becomes. True authenticity might require forgetting about authenticity altogether.",
+      ],
+      summarizeText: [
+        "PHILOSOPHICAL SYNTHESIS:\n\nYour exploration centers on the fundamental tension between human consciousness and cosmic reality. The core insight involves recognizing that our search for meaning might itself constitute the meaning we seek—a recursive philosophical loop. Key arguments include:\n• Meaning emerges from meaning-making\n• Consciousness creates its own problems\n• Existential anxiety implies a capacity for significance.",
+        "ESSENCE DISTILLATION:\n\nThe text grapples with the 'existential predicament'—the unique situation of beings who can question their own existence. Your analysis reveals consciousness as both the source of our greatest anxiety and our greatest possibility. Central themes include:\n• Recursive self-awareness\n• Time as constraint and possibility\n• The ethics of existing in an indifferent universe.",
+      ],
+      generateTags: [
+        "#existential-paradox #consciousness #meaning-making #temporal-anxiety #authentic-being #absurdism #phenomenology #self-examination",
+        "#nihilism #optimism #cosmic-indifference #responsibility #authenticity-paradox #existential-psychoanalysis #consciousness #freedom",
+      ],
+      generateQuestions: [
+        "REFLECTIVE INQUIRIES:\n\n• If your consciousness were to suddenly double in capacity, what aspects of existence would become visible that are currently hidden from you?\n\n• What would it feel like to experience time from the perspective of something that lives for millions of years? How would this change your relationship to urgency and meaning?\n\n• What assumptions about reality are you making that might be as fundamentally wrong as medieval assumptions about the Earth being the center of the universe?",
+        "EXISTENTIAL INTERROGATIONS:\n\n• If consciousness is an emergent property of complex matter, what does this mean for your sense of individual identity and continuity?\n\n• How do you distinguish between thoughts that are 'yours' and thoughts that are products of your cultural conditioning? Is this distinction meaningful?\n\n• What would it mean to live as if every moment were simultaneously the first and last moment of your life?",
+      ]
+    };
+
+    function showLoading(container) {
+      const output = container.querySelector('.ai-output');
+      output.style.display = 'block';
+      output.innerHTML = '<div class="ai-loading"></div> Contemplating the depths of existence...';
+    }
+
+    function showOutput(container, content) {
+      const output = container.querySelector('.ai-output');
+      const renderedContent = renderMarkdown(content);
+      output.innerHTML = `<div class="preview-content">${renderedContent}</div>`;
+      addInteractionButtons(output, content);
+    }
+
+    function addInteractionButtons(output, rawContent) {
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.marginTop = '15px';
+      
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-button';
+      copyBtn.textContent = 'Copy';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(rawContent);
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy', 2000);
+      };
+
+      const insertTopBtn = document.createElement('button');
+      insertTopBtn.className = 'copy-button';
+      insertTopBtn.textContent = 'Insert at Top';
+      insertTopBtn.style.marginLeft = '10px';
+      insertTopBtn.onclick = () => insertAtTop(rawContent);
+      
+      const insertCursorBtn = document.createElement('button');
+      insertCursorBtn.className = 'copy-button';
+      insertCursorBtn.textContent = 'Insert at Cursor';
+      insertCursorBtn.style.marginLeft = '10px';
+      insertCursorBtn.onclick = () => insertAtCursor(rawContent);
+      
+      const insertEndBtn = document.createElement('button');
+      insertEndBtn.className = 'copy-button';
+      insertEndBtn.textContent = 'Insert at End';
+      insertEndBtn.style.marginLeft = '10px';
+      insertEndBtn.onclick = () => insertAtEnd(rawContent);
+
+      buttonContainer.appendChild(copyBtn);
+      buttonContainer.appendChild(insertTopBtn);
+      buttonContainer.appendChild(insertCursorBtn);
+      buttonContainer.appendChild(insertEndBtn);
+      output.appendChild(buttonContainer);
+    }
+    
+    function getSelectedTextOrAll() {
+        if (editor.selectionStart !== editor.selectionEnd) {
+            return editor.value.substring(editor.selectionStart, editor.selectionEnd);
+        }
+        return editor.value;
+    }
+
+    function callAI(button, toolName, responses) {
+        const container = button.closest('.ai-tool-inner');
+        const inputEl = container.querySelector('.ai-input');
+        const input = inputEl.value.trim() || getSelectedTextOrAll().trim();
+        
+        if (!input) {
+            alert('Please select text in the editor, or type something into the AI input box.');
+            return;
+        }
+
+        showLoading(container);
+        
+        setTimeout(() => {
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            showOutput(container, response);
+            if (inputEl) inputEl.value = '';
+        }, 1500 + Math.random() * 500);
+    }
+
+    function expandThoughts(button) { callAI(button, 'expandThoughts', philosophicalResponses.expandThoughts); }
+    function generateIdeas(button) { callAI(button, 'generateIdeas', philosophicalResponses.generateIdeas); }
+    function improveWriting(button) { callAI(button, 'improveWriting', philosophicalResponses.improveWriting); }
+    function analyzeContent(button) { callAI(button, 'analyzeContent', philosophicalResponses.analyzeContent); }
+    function generateCounter(button) { callAI(button, 'generateCounter', philosophicalResponses.generateCounter); }
+    function exploreConcept(button) { callAI(button, 'exploreConcept', philosophicalResponses.exploreConcept); }
+    function summarizeText(button) { callAI(button, 'summarizeText', philosophicalResponses.summarizeText); }
+    function generateTags(button) { callAI(button, 'generateTags', philosophicalResponses.generateTags); }
+    function generateQuestions(button) { callAI(button, 'generateQuestions', philosophicalResponses.generateQuestions); }
+
+    function generatePrompt(button, type = 'existential') {
+      const container = button.closest('.ai-tool-inner');
+      showLoading(container);
+      
+      setTimeout(() => {
+        const prompts = philosophicalResponses.writingPrompts[type] || philosophicalResponses.writingPrompts.existential;
+        const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+        showOutput(container, prompt);
+      }, 1200);
+    }
+
+    editor.addEventListener('input', debounce(updatePreview, 250));
+    editor.addEventListener('input', updateWordCount);
+    setInterval(saveToStorage, 30000);
+    window.addEventListener('beforeunload', saveToStorage);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      populateNav();
+      selectPage(pages[0].id);
+      
+      document.addEventListener('click', (e) => {
+        const nav = document.getElementById('navLinks');
+        const navButton = document.querySelector('.nav-button');
+        if (nav && !nav.contains(e.target) && navButton && !navButton.contains(e.target)) {
+          nav.style.display = 'none';
+        }
+      });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && isFocusMode) {
+          e.preventDefault();
+          toggleFocusMode();
+      }
+      if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+          case 's': e.preventDefault(); saveToStorage(); break;
+          case 'e': e.preventDefault(); exportMarkdown(); break;
+          case 'p': e.preventDefault(); togglePreview(); break;
+          case 'i': e.preventDefault(); toggleAI(); break;
+        }
+      }
+    });
+
+    function slugify(text) {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')
+            .replace(/[^\w-]+/g, '')
+            .replace(/--+/g, '-')
+            .replace(/^-+/, '')
+            .replace(/-+$/, '');
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paralyzing Nihilism - AI Enhanced</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+      color: #e0e0e0;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 25px;
+      background: rgba(40, 40, 40, 0.9);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+      position: relative;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .nav-button {
+      margin-right: 25px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #8b8b8b;
+      transition: color 0.3s ease;
+    }
+
+    .nav-button:hover {
+      color: #e0e0e0;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 300;
+      letter-spacing: 1px;
+      color: #d4d4d4;
+    }
+
+    .ai-toggle {
+      background: linear-gradient(135deg, #5A6B73 0%, #8B9DC3 100%);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(90, 107, 115, 0.3);
+    }
+
+    .ai-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(90, 107, 115, 0.5);
+    }
+
+    .nav-links {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 60px;
+      left: 25px;
+      background: rgba(50, 50, 50, 0.95);
+      border-radius: 8px;
+      z-index: 10;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .nav-links a {
+      padding: 12px 20px;
+      text-decoration: none;
+      color: #a0a0a0;
+      border-bottom: 1px solid rgba(80, 80, 80, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .nav-links a:hover {
+      background: rgba(90, 107, 115, 0.2);
+      color: #e0e0e0;
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .journal-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 20px;
+      flex-wrap: wrap;
+    }
+
+    .controls button {
+      background: none;
+      border: 1px solid #444;
+      color: #ccc;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Courier New', monospace;
+    }
+
+    .controls button:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      border-color: #666;
+    }
+
+    #journal-container {
+      flex: 1;
+      padding: 20px;
+      margin: 0 20px 20px;
+      border-radius: 8px;
+      background: rgba(25, 25, 25, 0.8);
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
+      position: relative;
+    }
+
+    #journal-editor,
+    #markdown-preview {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+      color: #e0e0e0;
+      font-size: 16px;
+      line-height: 1.6;
+      font-family: 'Courier New', monospace;
+      resize: none;
+    }
+
+    #journal-editor:focus {
+      outline: none;
+    }
+
+    #journal-editor::placeholder {
+      color: #666;
+      font-style: italic;
+    }
+
+    #markdown-preview {
+      display: none;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    #markdown-preview h1, #markdown-preview h2, #markdown-preview h3,
+    #markdown-preview h4, #markdown-preview h5, #markdown-preview h6 {
+      color: #8B9DC3;
+      margin: 20px 0 10px 0;
+    }
+
+    #markdown-preview strong {
+      color: #5A6B73;
+    }
+
+    #markdown-preview em {
+      color: #a0a0a0;
+      font-style: italic;
+    }
+
+    /* AI Panel Styles */
+    .ai-panel {
+      width: 400px;
+      background: rgba(40, 40, 40, 0.95);
+      border-left: 2px solid #5A6B73;
+      display: none;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+      box-shadow: -8px 0 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .ai-panel.active {
+      display: flex;
+    }
+
+    .ai-header {
+      padding: 20px;
+      background: linear-gradient(135deg, #5A6B73 0%, #8B9DC3 100%);
+      color: white;
+      text-align: center;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .ai-tools {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    .ai-tool {
+      border-bottom: 1px solid rgba(90, 107, 115, 0.2);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .ai-tool:hover {
+      background: rgba(90, 107, 115, 0.1);
+    }
+
+    .ai-tool-header {
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: none;
+      background: none;
+      color: #e0e0e0;
+      width: 100%;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .ai-tool-icon {
+      font-size: 18px;
+      color: #8B9DC3;
+    }
+
+    .ai-tool-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: rgba(25, 25, 25, 0.5);
+    }
+
+    .ai-tool.expanded .ai-tool-content {
+      max-height: 500px;
+    }
+
+    .ai-tool-inner {
+      padding: 20px;
+    }
+
+    .ai-input {
+      width: 100%;
+      background: rgba(40, 40, 40, 0.8);
+      border: 1px solid #5A6B73;
+      color: #e0e0e0;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      margin-bottom: 12px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .ai-input:focus {
+      outline: none;
+      border-color: #8B9DC3;
+      box-shadow: 0 0 8px rgba(139, 157, 195, 0.3);
+    }
+
+    .ai-button {
+      background: linear-gradient(135deg, #5A6B73 0%, #8B9DC3 100%);
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      font-family: 'Courier New', monospace;
+      transition: all 0.3s ease;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .ai-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(90, 107, 115, 0.4);
+    }
+
+    .ai-output {
+      background: rgba(25, 25, 25, 0.8);
+      border: 1px solid #444;
+      color: #e0e0e0;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 12px;
+      white-space: pre-wrap;
+    }
+
+    .copy-button {
+      background: rgba(90, 107, 115, 0.3);
+      border: 1px solid #5A6B73;
+      color: #8B9DC3;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: 'Courier New', monospace;
+      margin-top: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .copy-button:hover {
+      background: rgba(90, 107, 115, 0.5);
+      color: #e0e0e0;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 25px;
+      background: rgba(40, 40, 40, 0.9);
+      box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(5px);
+    }
+
+    .footer-text {
+      font-size: 14px;
+      color: #8b8b8b;
+      font-style: italic;
+    }
+
+    .arrows {
+      display: flex;
+      gap: 15px;
+    }
+
+    .arrow {
+      cursor: pointer;
+      font-size: 16px;
+      color: #8b8b8b;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .arrow:hover {
+      color: #8B9DC3;
+    }
+
+    /* Loading animation */
+    .ai-loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(139, 157, 195, 0.3);
+      border-radius: 50%;
+      border-top-color: #8B9DC3;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive design */
+    @media (max-width: 900px) {
+      .ai-panel {
+        width: 350px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+      
+      .ai-panel {
+        width: 100%;
+        max-height: 50vh;
+        border-left: none;
+        border-top: 2px solid #5A6B73;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      
+      .header-left {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: rgba(40, 40, 40, 0.5);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(90, 107, 115, 0.5);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(90, 107, 115, 0.7);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-left">
+      <button class="nav-button" onclick="toggleNav()">☰</button>
+      <div class="page-title">Paralyzing Nihilism</div>
+    </div>
+    <button class="ai-toggle" onclick="toggleAI()">🧠 AI Assistant</button>
+  </header>
+
+  <div class="nav-links" id="navLinks">
+    <a href="#page1" onclick="selectPage('page1')">Void Chronicles</a>
+    <a href="#page2" onclick="selectPage('page2')">Ego Dissolution</a>
+    <a href="#page3" onclick="selectPage('page3')">Transcendental Notes</a>
+  </div>
+
+  <div class="main-container">
+    <div class="journal-section">
+      <div class="controls">
+        <button onclick="togglePreview()">Toggle Preview</button>
+        <button onclick="exportMarkdown()">Export .md</button>
+        <button onclick="clearEditor()">Clear</button>
+        <button onclick="insertTimestamp()">Timestamp</button>
+      </div>
+
+      <div id="journal-container">
+        <textarea id="journal-editor" placeholder="# Begin your existential chronicle...
+
+The void beckons. Your thoughts await manifestation in this digital realm of philosophical contemplation. 
+
+What profound insights emerge from the depths of your consciousness today?"></textarea>
+        <div id="markdown-preview"></div>
+      </div>
+    </div>
+
+    <div class="ai-panel" id="aiPanel">
+      <div class="ai-header">
+        ⚡ Philosophical AI Assistant
+      </div>
+      
+      <div class="ai-tools">
+        
+        <!-- Expand Thoughts -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">✨</span>
+            <span>Expand Thoughts</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste a sentence or paragraph to expand philosophically..."></textarea>
+              <button class="ai-button" onclick="expandThoughts(this)">Expand</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate Ideas -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🧠</span>
+            <span>Generate Ideas</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Enter a theme or topic for philosophical exploration..."></textarea>
+              <button class="ai-button" onclick="generateIdeas(this)">Generate</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Writing Prompts -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">📝</span>
+            <span>Writing Prompts</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <button class="ai-button" onclick="generatePrompt(this)">Generate Existential Prompt</button>
+              <button class="ai-button" onclick="generatePrompt(this, 'nihilistic')">Nihilistic Prompt</button>
+              <button class="ai-button" onclick="generatePrompt(this, 'consciousness')">Consciousness Prompt</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Improve Writing -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">✏️</span>
+            <span>Improve Writing</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste text to enhance clarity, style, and philosophical depth..."></textarea>
+              <button class="ai-button" onclick="improveWriting(this)">Improve</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analyze Content -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🔍</span>
+            <span>Analyze Content</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste text to analyze themes, concepts, and philosophical arguments..."></textarea>
+              <button class="ai-button" onclick="analyzeContent(this)">Analyze</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Counter-Perspective -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">⚡</span>
+            <span>Counter-Perspective</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Present an argument or viewpoint to explore contradictions..."></textarea>
+              <button class="ai-button" onclick="generateCounter(this)">Generate Counter</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Concept Explorer -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">📚</span>
+            <span>Concept Explorer</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Enter a philosophical concept to explore in depth..."></textarea>
+              <button class="ai-button" onclick="exploreConcept(this)">Explore</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summarize -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🎯</span>
+            <span>Summarize</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste long text to create a philosophical summary..."></textarea>
+              <button class="ai-button" onclick="summarizeText(this)">Summarize</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Generate Tags -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">🏷️</span>
+            <span>Generate Tags</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Paste text to generate relevant philosophical tags..."></textarea>
+              <button class="ai-button" onclick="generateTags(this)">Generate Tags</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reflection Questions -->
+        <div class="ai-tool">
+          <button class="ai-tool-header" onclick="toggleTool(this)">
+            <span class="ai-tool-icon">💭</span>
+            <span>Reflection Questions</span>
+          </button>
+          <div class="ai-tool-content">
+            <div class="ai-tool-inner">
+              <textarea class="ai-input" placeholder="Share your current thoughts to receive deep reflection questions..."></textarea>
+              <button class="ai-button" onclick="generateQuestions(this)">Generate Questions</button>
+              <div class="ai-output" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-text">The Religious Experience of Nihilism</div>
+    <div class="arrows">
+      <a href="#prev" class="arrow" onclick="previousPage()">← Previous</a>
+      <a href="#next" class="arrow" onclick="nextPage()">Next →</a>
+    </div>
+  </footer>
+
+  <script>
+    // Core app state
+    const editor = document.getElementById('journal-editor');
+    const preview = document.getElementById('markdown-preview');
+    const aiPanel = document.getElementById('aiPanel');
+    
+    let currentPage = 'page1';
+    let isAIOpen = false;
+
+    // Navigation functions
+    function toggleNav() {
+      const nav = document.getElementById('navLinks');
+      nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function toggleAI() {
+      isAIOpen = !isAIOpen;
+      aiPanel.classList.toggle('active', isAIOpen);
+      document.querySelector('.ai-toggle').textContent = isAIOpen ? '✖ Close AI' : '🧠 AI Assistant';
+    }
+
+    function toggleTool(button) {
+      const tool = button.parentElement;
+      const isExpanded = tool.classList.contains('expanded');
+      
+      // Close all other tools
+      document.querySelectorAll('.ai-tool.expanded').forEach(t => {
+        if (t !== tool) t.classList.remove('expanded');
+      });
+      
+      // Toggle current tool
+      tool.classList.toggle('expanded', !isExpanded);
+    }
+
+    // Core editor functions
+    function togglePreview() {
+      if (preview.style.display === 'block') {
+        preview.style.display = 'none';
+        editor.style.display = 'block';
+      } else {
+        const text = editor.value;
+        preview.innerHTML = renderMarkdown(text);
+        preview.style.display = 'block';
+        editor.style.display = 'none';
+      }
+    }
+
+    function renderMarkdown(md) {
+      return md
+        .replace(/^###### (.*$)/gim, '<h6>$1</h6>')
+        .replace(/^##### (.*$)/gim, '<h5>$1</h5>')
+        .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/\n\n/gim, '</p><p>')
+        .replace(/\n/gim, '<br>')
+        .replace(/^(.*)/, '<p>$1')
+        .replace(/(.*$)/, '$1</p>');
+    }
+
+    function exportMarkdown() {
+      const timestamp = new Date().toISOString().slice(0,10);
+      const blob = new Blob([editor.value], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nihil-notes-${timestamp}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function clearEditor() {
+      if (confirm('Clear all content? This cannot be undone.')) {
+        editor.value = '';
+        saveToStorage();
+      }
+    }
+
+    function insertTimestamp() {
+      const timestamp = new Date().toLocaleString();
+      const text = `\n\n---\n${timestamp}\n\n`;
+      insertAtCursor(text);
+    }
+
+    function insertAtCursor(text) {
+      const start = editor.selectionStart;
+      const end = editor.selectionEnd;
+      const value = editor.value;
+      editor.value = value.slice(0, start) + text + value.slice(end);
+      editor.selectionStart = editor.selectionEnd = start + text.length;
+      editor.focus();
+      saveToStorage();
+    }
+
+    // Page management
+    function selectPage(pageId) {
+      // Save current page
+      saveToStorage();
+      
+      // Switch to new page
+      currentPage = pageId;
+      loadFromStorage();
+      
+      // Close nav
+      document.getElementById('navLinks').style.display = 'none';
+    }
+
+    function previousPage() {
+      const pages = ['page1', 'page2', 'page3'];
+      const current = pages.indexOf(currentPage);
+      const prev = current > 0 ? pages[current - 1] : pages[pages.length - 1];
+      selectPage(prev);
+    }
+
+    function nextPage() {
+      const pages = ['page1', 'page2', 'page3'];
+      const current = pages.indexOf(currentPage);
+      const next = current < pages.length - 1 ? pages[current + 1] : pages[0];
+      selectPage(next);
+    }
+
+    // Storage functions
+    function saveToStorage() {
+      localStorage.setItem(`nihilNotes_${currentPage}`, editor.value);
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem(`nihilNotes_${currentPage}`);
+      editor.value = saved || '';
+    }
+
+    // AI Functions with sophisticated philosophical responses
+    
+    const philosophicalResponses = {
+      expandThoughts: [
+        "The paradox of existence reveals itself in the tension between our desperate search for meaning and the universe's apparent indifference to our plight. Consider how this very act of seeking meaning might itself be the meaning we seek—a recursive loop of consciousness examining itself, like Ouroboros consuming its own tail in an eternal dance of self-reflection.",
+        
+        "What emerges here is the fundamental contradiction of human consciousness: we are beings capable of conceiving infinity while trapped within finite existence. This cognitive dissonance creates the space where philosophy flourishes—in the gap between what we can imagine and what we can actually comprehend.",
+        
+        "The absurdity lies not in the lack of inherent meaning, but in our persistent belief that meaning must be inherent rather than constructed. We are architects of significance in a universe that provides only raw materials—consciousness, time, and the strange capacity to question our own questioning."
+      ],
+      
+      generateIdeas: [
+        "• The Archaeology of Lost Thoughts: Excavating the ideas we've forgotten we once knew\n• Temporal Anxiety: How our relationship with time shapes our sense of self\n• The Ethics of Existing: Whether continuing to exist is itself a moral choice\n• Consciousness as Cosmic Error: Exploring the possibility that awareness is an aberration\n• The Aesthetics of Decay: Finding beauty in entropy and dissolution",
+        
+        "• The Silence Between Words: What exists in the gaps of language and thought\n• Inherited Suffering: How we carry the pain of previous generations\n• The Democracy of Meaninglessness: If nothing matters, does everything matter equally?\n• Digital Dualism: The split between our online and offline selves\n• The Philosophy of Forgetting: The necessity and tragedy of memory loss",
+        
+        "• The Weight of Consciousness: Why awareness feels like a burden rather than a gift\n• Existential Procrastination: Delaying authentic living through constant distraction\n• The Myth of Progress: Whether human advancement is linear or cyclical\n• Loneliness as Default State: Connection as temporary escape from fundamental isolation\n• The Courage to Be Ordinary: Rejecting the pressure for exceptional existence"
+      ],
+      
+      writingPrompts: {
+        existential: [
+          "Write about a moment when you realized that your entire identity might be a carefully constructed illusion. What happens when the stories you tell yourself about yourself begin to unravel?",
+          
+          "Imagine discovering that every decision you've ever made was actually made by a future version of yourself reaching back through time. How does this change your sense of agency and responsibility?",
+          
+          "Describe the last conversation you would have with your consciousness before it dissolves into the void. What questions would you ask? What would you want to understand?"
+        ],
+        
+        nihilistic: [
+          "If you learned that the universe would end in exactly 24 hours and no one would remember anything that ever happened, how would you spend your final day? What does this reveal about what you truly value?",
+          
+          "Write about trying to explain the concept of hope to an alien intelligence that has never experienced suffering or loss. How do you justify optimism in a fundamentally indifferent universe?",
+          
+          "Describe the feeling of being simultaneously grateful for existence and resentful of the burden of consciousness. How do these contradictory emotions coexist within you?"
+        ],
+        
+        consciousness: [
+          "What if your consciousness is actually a shared experience—that every human is experiencing the same singular awareness from different perspectives? Explore this possibility and its implications.",
+          
+          "Write about the moment when you first became aware that you were aware. How did this meta-cognitive recognition change your relationship with your own mind?",
+          
+          "Imagine that thoughts are not generated by your brain but are instead signals you're receiving from elsewhere. Where might they be coming from, and how does this change your sense of mental ownership?"
+        ]
+      },
+      
+      improveWriting: [
+        "ENHANCED VERSION:\n\nThe existential weight of this observation deepens when we consider the recursive nature of self-examination. Your original insight reveals the fundamental paradox of consciousness—we are simultaneously the observer and the observed, trapped in an endless hall of mirrors where each reflection reveals new layers of complexity. The very act of questioning our existence becomes another layer of existence to question, creating an infinite regress that mirrors the mathematical concept of strange loops in cognitive science.",
+        
+        "REFINED PERSPECTIVE:\n\nThis thought gains philosophical gravitas when reframed through the lens of phenomenological inquiry. The essence of your observation touches upon what Heidegger termed 'thrownness'—our condition of being hurled into existence without our consent or clear purpose. The anxiety you describe is not merely emotional but ontological—a fundamental uncertainty about the nature of being itself. Consider how this uncertainty might not be a problem to solve but a condition to embrace as the very foundation of authentic existence.",
+        
+        "PHILOSOPHICALLY EXPANDED:\n\nYour intuition here resonates with the ancient philosophical tension between determinism and free will, but with a contemporary twist. What you're describing is the experiential reality of what philosophers call 'emergence'—how complex systems (like consciousness) arise from simpler components (neurons) in ways that seem to transcend their origins. The feeling of being both author and character in your own life story reflects this fundamental mystery of how subjective experience emerges from objective matter."
+      ],
+      
+      analyzeContent: [
+        "THEMATIC ANALYSIS:\n\nCore philosophical themes present:\n• Existential anxiety and the search for authentic being\n• The paradox of consciousness examining itself\n• Temporal anxiety—our relationship with mortality and finitude\n• The construction vs. discovery of meaning\n• The tension between individual experience and universal truths\n\nPhilosophical frameworks engaged:\n• Phenomenology (lived experience as primary data)\n• Existentialism (emphasis on choice and responsibility)\n• Absurdism (the collision between human need for meaning and cosmic silence)\n\nThe text demonstrates a sophisticated grappling with what philosophers call 'the hard problem of consciousness'—how subjective experience arises from objective processes.",
+        
+        "CONCEPTUAL MAPPING:\n\nThe argument structure reveals:\n1. Initial observation or experience\n2. Recognition of paradox or contradiction\n3. Attempt to reconcile opposing forces\n4. Deepening of complexity rather than resolution\n\nThis pattern mirrors the philosophical method of dialectical thinking, where thesis meets antithesis to produce synthesis—but here the synthesis itself becomes a new thesis, creating ongoing dialectical movement.\n\nThe writing style suggests influence from both analytic philosophy (precise argumentation) and continental philosophy (attention to lived experience and language's poetic dimension)."
+      ],
+      
+      generateCounter: [
+        "COUNTER-PERSPECTIVE:\n\nWhile your argument assumes that meaning must be either inherent or constructed, consider a third possibility: meaning as emergent property. Perhaps meaning arises naturally from the interaction between conscious beings and their environment, neither imposed by cosmic design nor artificially created by human will.\n\nThis challenges the binary thinking that underlies much existential angst. If meaning emerges organically from complexity—like how wetness emerges from H2O molecules that are individually not wet—then the question shifts from 'How do we create meaning?' to 'How do we recognize the meaning that's already emerging around us?'\n\nYour anxiety about meaninglessness might itself be evidence of meaning's presence—anxiety being consciousness's way of sensing significance.",
+        
+        "DIALECTICAL OPPOSITION:\n\nThe very fact that you can conceive of meaninglessness might prove meaning's existence. To recognize absence, you must first understand presence. Your ability to feel existential dread suggests that you possess some template for existential fulfillment.\n\nFurthermore, the universality of meaning-making across cultures and throughout history suggests this isn't arbitrary human construction but something more fundamental—perhaps consciousness naturally tends toward significance the way matter naturally tends toward entropy.\n\nYour nihilistic conclusion might be a philosophical luxury afforded by a life so rich with meaning that you can temporarily afford to deny it."
+      ],
+      
+      exploreConcept: [
+        "DEEP DIVE: The Absurd\n\nThe absurd, as Camus conceived it, is not simply nonsensical but represents the fundamental collision between human need for rational understanding and the universe's resistance to such understanding. It's the experience of asking 'Why?' and receiving only silence in return.\n\nHistorical evolution:\n• Kierkegaard: The absurd as the collision between faith and reason\n• Camus: The absurd as the collision between human need for meaning and cosmic indifference\n• Contemporary: The absurd as the collision between our evolved cognitive architecture and the reality it attempts to comprehend\n\nThe absurd is not a problem to be solved but a condition to be lived. Camus suggests we must imagine Sisyphus happy—not because his task has ultimate meaning, but because he has chosen to embrace the struggle itself.\n\nModern applications: How does the absurd manifest in digital life? In consumer culture? In our relationship with artificial intelligence?",
+        
+        "CONCEPTUAL EXPLORATION: Authenticity\n\nAuthenticity emerges from the existentialist tradition as both a goal and a paradox. To be authentic means to be true to one's 'essence'—but existentialism claims we have no predetermined essence, only existence that must create its own essence.\n\nLayers of complexity:\n• Authenticity vs. Sincerity: Being authentic to your constructed self vs. being sincere in your performance\n• Social Construction: How can authenticity exist when identity is shaped by social forces?\n• Temporal Authenticity: Which version of yourself is the 'authentic' one across time?\n\nThe paradox deepens: The more you try to be authentic, the more performative authenticity becomes. True authenticity might require forgetting about authenticity altogether.\n\nContemporary challenge: In an age of curated online identities, what does it mean to be authentic when all self-expression is mediated by technology?"
+      ],
+      
+      summarizeText: [
+        "PHILOSOPHICAL SYNTHESIS:\n\nYour exploration centers on the fundamental tension between human consciousness and cosmic reality. The core insight involves recognizing that our search for meaning might itself constitute the meaning we seek—a recursive philosophical loop that mirrors the structure of consciousness itself.\n\nKey arguments:\n• Meaning emerges from the act of meaning-making\n• Consciousness creates the problems it then attempts to solve\n• Existential anxiety serves as evidence of our capacity for significance\n• The paradox of self-aware beings in an apparently non-self-aware universe\n\nPhilosophical implications: This suggests a movement beyond traditional nihilism toward what might be called 'constructive absurdism'—embracing meaninglessness as the foundation for creating authentic meaning.",
+        
+        "ESSENCE DISTILLATION:\n\nThe text grapples with what philosophers call 'the existential predicament'—the unique situation of beings who can question their own existence. Your analysis reveals consciousness as both the source of our greatest anxiety and our greatest possibility.\n\nCentral themes:\n• The recursive nature of self-awareness\n• Time as both constraint and creative possibility\n• The ethics of existing in an indifferent universe\n• Meaning as emergent rather than discovered or imposed\n\nThe writing demonstrates sophisticated engagement with the tradition of existential phenomenology while pointing toward contemporary questions about consciousness, technology, and meaning in the 21st century."
+      ],
+      
+      generateTags: [
+        "#existential-paradox #consciousness-recursion #meaning-making #temporal-anxiety #authentic-being #absurd-condition #phenomenology #self-examination #ontological-uncertainty #existential-courage #dialectical-thinking #emergence-theory #lived-experience #philosophical-anthropology #meta-cognition",
+        
+        "#nihilistic-optimism #constructed-meaning #cosmic-indifference #existential-responsibility #being-toward-death #thrownness #bad-faith #authenticity-paradox #absurd-reasoning #existential-psychoanalysis #temporal-consciousness #freedom-anxiety #nothingness #being-and-time #existential-dialectics",
+        
+        "#philosophical-therapy #meaning-emergence #consciousness-studies #existential-analysis #phenomenological-reduction #intentionality #being-in-the-world #existential-hermeneutics #anxiety-as-disclosure #fundamental-ontology #existential-aesthetics #philosophical-anthropology #recursive-awareness #meta-philosophy #existential-ethics"
+      ],
+      
+      generateQuestions: [
+        "REFLECTIVE INQUIRIES:\n\n• If your consciousness were to suddenly double in capacity, what aspects of existence would become visible that are currently hidden from you?\n\n• What would it feel like to experience time from the perspective of something that lives for millions of years? How would this change your relationship to urgency and meaning?\n\n• If you could ask the universe one question and receive a definitive answer, what would you ask? What does your choice reveal about what you truly want to understand?\n\n• How might your current struggles appear to someone viewing your life as a complete story from beginning to end?\n\n• What assumptions about reality are you making that might be as fundamentally wrong as medieval assumptions about the Earth being the center of the universe?",
+        
+        "EXISTENTIAL INTERROGATIONS:\n\n• If consciousness is an emergent property of complex matter, what does this mean for your sense of individual identity and continuity?\n\n• How do you distinguish between thoughts that are 'yours' and thoughts that are products of your cultural conditioning? Is this distinction meaningful?\n\n• What would it mean to live as if every moment were simultaneously the first moment of your life and the last moment of your life?\n\n• If you discovered that all your memories were implanted yesterday, but your personality and values remained intact, would you still be 'you'?\n\n• How might the experience of existing appear to a consciousness that didn't have the concept of non-existence as a point of contrast?"
+      ]
+    };
+
+    // AI Function implementations
+    function showLoading(container) {
+      const output = container.querySelector('.ai-output');
+      output.style.display = 'block';
+      output.innerHTML = '<div class="ai-loading"></div> Contemplating the depths of existence...';
+    }
+
+    function showOutput(container, content) {
+      const output = container.querySelector('.ai-output');
+      output.innerHTML = content;
+      addCopyButton(output);
+    }
+
+    function addCopyButton(output) {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-button';
+      copyBtn.textContent = 'Copy to clipboard';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(output.textContent.replace('Copy to clipboard', '').trim());
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy to clipboard', 2000);
+      };
+      output.appendChild(copyBtn);
+    }
+
+    function insertOutput(output) {
+      const text = output.textContent.replace('Copy to clipboard', '').trim();
+      insertAtCursor('\n\n' + text + '\n\n');
+    }
+
+    function expandThoughts(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter some text to expand');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.expandThoughts;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 1500);
+    }
+
+    function generateIdeas(button) {
+      const container = button.closest('.ai-tool-inner');
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.generateIdeas;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 2000);
+    }
+
+    function generatePrompt(button, type = 'existential') {
+      const container = button.closest('.ai-tool-inner');
+      showLoading(container);
+      
+      setTimeout(() => {
+        const prompts = philosophicalResponses.writingPrompts[type] || philosophicalResponses.writingPrompts.existential;
+        const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+        showOutput(container, prompt);
+      }, 1200);
+    }
+
+    function improveWriting(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter some text to improve');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.improveWriting;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 2500);
+    }
+
+    function analyzeContent(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter some text to analyze');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.analyzeContent;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 3000);
+    }
+
+    function generateCounter(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter an argument or viewpoint to counter');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.generateCounter;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 2200);
+    }
+
+    function exploreConcept(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter a philosophical concept to explore');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.exploreConcept;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 2800);
+    }
+
+    function summarizeText(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter text to summarize');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.summarizeText;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 1800);
+    }
+
+    function generateTags(button) {
+      const container = button.closest('.ai-tool-inner');
+      const input = container.querySelector('.ai-input').value.trim();
+      
+      if (!input) {
+        alert('Please enter text to generate tags for');
+        return;
+      }
+      
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.generateTags;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 1300);
+    }
+
+    function generateQuestions(button) {
+      const container = button.closest('.ai-tool-inner');
+      showLoading(container);
+      
+      setTimeout(() => {
+        const responses = philosophicalResponses.generateQuestions;
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        showOutput(container, response);
+      }, 2000);
+    }
+
+    // Auto-save functionality
+    setInterval(() => {
+      saveToStorage();
+    }, 30000); // Auto-save every 30 seconds
+
+    window.addEventListener('beforeunload', () => {
+      saveToStorage();
+    });
+
+    // Initialize app
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromStorage();
+      
+      // Add insert button to all AI outputs
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('ai-output')) {
+          const insertBtn = document.createElement('button');
+          insertBtn.className = 'copy-button';
+          insertBtn.textContent = 'Insert into journal';
+          insertBtn.style.marginLeft = '10px';
+          insertBtn.onclick = () => insertOutput(e.target);
+          
+          if (!e.target.querySelector('button[onclick*="insertOutput"]')) {
+            e.target.appendChild(insertBtn);
+          }
+        }
+      });
+      
+      // Close nav when clicking outside
+      document.addEventListener('click', (e) => {
+        const nav = document.getElementById('navLinks');
+        const navButton = document.querySelector('.nav-button');
+        
+        if (!nav.contains(e.target) && !navButton.contains(e.target)) {
+          nav.style.display = 'none';
+        }
+      });
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+          case 's':
+            e.preventDefault();
+            saveToStorage();
+            break;
+          case 'e':
+            e.preventDefault();
+            exportMarkdown();
+            break;
+          case 'p':
+            e.preventDefault();
+            togglePreview();
+            break;
+          case 'i':
+            e.preventDefault();
+            toggleAI();
+            break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>
