@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nihiltheism Interactive Graph — Frontend-Only</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <!-- Tailwind (CDN build) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Force-Graph (vanilla) -->
+  <script src="https://unpkg.com/force-graph"></script>
+  <style>
+    :root{
+      --bg:#0b0b10;          /* obsidian-ish */
+      --panel:#11121a;
+      --panel-2:#0e0f15;
+      --text:#e6e6ef;
+      --muted:#a5a7b4;
+      --purple:#9f6aff;
+      --amber:#f59e0b;
+      --emerald:#10b981;
+      --rose:#f43f5e;
+      --slate:#334155;
+    }
+    html, body{height:100%;}
+    body{font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";background:var(--bg);color:var(--text);}
+    .glass{background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border:1px solid rgba(255,255,255,0.06); backdrop-filter: blur(8px);}
+    .btn{border:1px solid rgba(255,255,255,0.12); padding:6px 10px; border-radius:10px;}
+    .btn:hover{border-color:rgba(255,255,255,0.25);}    
+    .chip{border:1px solid rgba(255,255,255,0.08); border-radius:999px; padding:2px 8px; font-size:12px;}
+    .badge{border-radius:8px; padding:2px 6px; font-size:11px;}
+    .scroll{scrollbar-color:#2a2d3a transparent;}
+    .scroll::-webkit-scrollbar{width:10px;height:10px}
+    .scroll::-webkit-scrollbar-thumb{background:#232534;border-radius:8px}
+    .hidden-input{display:none}
+    .link{color:#cbd5ff}
+    .panel-title{font-weight:800; letter-spacing:.4px}
+    .tag{border:1px solid rgba(255,255,255,.08); border-radius:999px; padding:2px 8px;}
+    .draggable{cursor:move}
+  </style>
+</head>
+<body class="h-full">
+  <div class="flex flex-col h-screen">
+    <!-- Top bar -->
+    <div class="flex items-center gap-2 p-3 border-b border-slate-800 bg-[var(--panel)]">
+      <div class="text-lg font-extrabold">Nihiltheism Interactive Graph</div>
+      <div class="text-xs text-[var(--muted)]">Frontend‑only • Obsidian‑style • LocalStorage</div>
+      <div class="flex-1"></div>
+      <input id="search" class="px-3 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800 w-72" placeholder="Search thinkers, quotes, concepts…" />
+      <button id="btn-clear" class="btn ml-2">Clear</button>
+      <button id="btn-center" class="btn ml-2">Center</button>
+      <button id="btn-stats" class="btn ml-2">Stats</button>
+      <button id="btn-export" class="btn ml-2">Export</button>
+      <label for="file-import" class="btn ml-2 cursor-pointer">Import</label>
+      <input id="file-import" type="file" accept=".json,.csv" class="hidden-input" />
+      <button id="btn-reset" class="btn ml-2 text-rose-300">Reset</button>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+      <!-- Left panel -->
+      <div id="left-panel" class="w-80 shrink-0 p-3 glass border-r border-slate-800 overflow-y-auto scroll">
+        <div class="panel-title mb-3">Filters</div>
+        <div class="space-y-2">
+          <div>
+            <div class="text-xs text-[var(--muted)] mb-1">Category</div>
+            <select id="filter-category" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800"></select>
+          </div>
+          <div>
+            <div class="text-xs text-[var(--muted)] mb-1">Tradition</div>
+            <select id="filter-tradition" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800"></select>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <input id="chk-show-labels" type="checkbox" class="accent-[var(--emerald)]" checked>
+            <label for="chk-show-labels" class="text-sm">Show labels</label>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="chk-highlight" type="checkbox" class="accent-[var(--purple)]" checked>
+            <label for="chk-highlight" class="text-sm">Highlight search hits</label>
+          </div>
+        </div>
+
+        <div class="panel-title mt-6 mb-2">Add Node</div>
+        <div class="space-y-2">
+          <input id="new-label" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Thinker / Concept name" />
+          <input id="new-tradition" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Tradition (e.g., Existential)" />
+          <input id="new-category" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Thematic Category" />
+          <textarea id="new-quote" class="w-full px-2 py-2 h-20 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Key quote / description"></textarea>
+          <button id="btn-add-node" class="btn w-full">Add Node</button>
+        </div>
+
+        <div class="panel-title mt-6 mb-2">Add Link</div>
+        <div class="space-y-2">
+          <input id="link-a" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Source label" />
+          <input id="link-b" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Target label" />
+          <input id="link-reason" class="w-full px-2 py-2 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Reason / shared vector" />
+          <button id="btn-add-link" class="btn w-full">Add Link</button>
+        </div>
+
+        <div class="panel-title mt-6 mb-2">Heuristic Suggestions</div>
+        <div id="suggestions" class="space-y-2 text-sm"></div>
+
+        <div class="panel-title mt-6 mb-2">Text Concept Extractor</div>
+        <textarea id="txt-extract" class="w-full px-2 py-2 h-24 rounded-lg bg-[var(--panel-2)] border border-slate-800" placeholder="Paste philosophical text here…"></textarea>
+        <button id="btn-extract" class="btn w-full mt-2">Extract Concepts</button>
+        <div id="extract-out" class="mt-2 text-xs text-[var(--muted)]"></div>
+      </div>
+
+      <!-- Graph viewport -->
+      <div class="flex-1 relative">
+        <div id="graph" class="absolute inset-0"></div>
+        <!-- Node details drawer -->
+        <div id="drawer" class="absolute right-3 top-3 w-[380px] max-h-[80vh] overflow-y-auto scroll glass rounded-xl border border-slate-800 p-3 hidden">
+          <div class="flex items-center justify-between">
+            <div class="panel-title">Details</div>
+            <button id="btn-close-drawer" class="btn">Close</button>
+          </div>
+          <div id="drawer-content" class="mt-3 text-sm"></div>
+        </div>
+
+        <!-- Stats modal -->
+        <div id="stats-modal" class="absolute inset-0 hidden items-center justify-center bg-black/50">
+          <div class="glass rounded-xl border border-slate-800 p-5 w-[560px] max-w-[90vw]">
+            <div class="flex items-center justify-between">
+              <div class="panel-title">Graph Statistics</div>
+              <button id="btn-close-stats" class="btn">Close</button>
+            </div>
+            <div id="stats-content" class="mt-3 text-sm"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ---------- Seed Data (29+ nodes, 37+ links) ----------
+  const SEED = {
+    nodes: [
+      N('Jesus (New Testament)', 'Early Christianity', 'Existential Dread & Renunciation', '“Whoever finds his life will lose it…” Emphasizes the paradox of losing the self to find meaning.'),
+      N('Jesus — Two Masters', 'Early Christianity', 'Duality / Ethical Conflict', '“No one can serve two masters…” Conflict between Mammon and God.'),
+      N('Augustine — Vain Hopes', 'Christian Philosophy', 'Existential Anxiety & Conflict', '“Every vain hope became worthless to me.”'),
+      N('Augustine — Two Wills', 'Christian Philosophy', 'Dual Nature of Humans', '“My two wills… struggled within me.”'),
+      N('Miguel de Molinos', 'Christian Mysticism', 'Mysticism & Ego Death', '“This Nothing… is the means by which the Lord works wonders in thy Soul.”'),
+      N('John of the Cross', 'Christian Mysticism', 'Asceticism / Dark Night / Faith', 'Faith is a dark night; purgation and annihilation of attachments.'),
+      N('Theresa of Avila', 'Christian Mysticism', 'Mystical Experience / Inner Journey', 'Distress returning to the world after “conversation in heaven”.'),
+      N('Meister Eckhart', 'Christian Mysticism', 'Apophatic / Emptiness / Paradox', '“To be empty of things is to be full of God.”'),
+      N('Thomas à Kempis', 'Devotio Moderna', 'Devotion / Humility / Vanitas', '“All is vanity save to love God.” Death-meditation.'),
+      N('Martin Luther', 'Protestant Reformation', 'Divine Grace vs Human Agency', 'Bondage of the will; human powerlessness without grace.'),
+      N('Blaise Pascal', 'Christian Philosophy', 'Existential Dread / Human Condition', '“The eternal silence of these infinite spaces frightens me.”'),
+      N('Leo Tolstoy', 'Russian Orthodox / Existential', 'Meaninglessness / Renunciation', 'Life lacked meaning; embraced Gospel non-resistance.'),
+      N('Søren Kierkegaard', 'Existential Philosophy', 'Despair / Faith / Subjectivity', '“Despair is the sickness unto death.” Leap beyond ethics.'),
+      N('Friedrich Nietzsche — Death of God', 'Existential Nihilism', 'Nihilism / Revaluation', '“God is dead… and we have killed him.”'),
+      N('Friedrich Nietzsche — Amor Fati', 'Existential Nihilism', 'Beyond Good & Evil / Creation', 'Great contempt → revaluation of values.'),
+      N('Albert Camus', 'Existential Absurdism', 'Absurd / Revolt / Consciousness', 'The why arises; live lucidly within the absurd.'),
+      N('Emil Cioran', 'Existential Pessimism', 'Pessimism / Nothingness', 'Agony as lucidity; “nothingness is the way…”.'),
+      N('Thomas Ligotti', 'Literary Pessimism', 'Nihilism / Existential Horror', 'Consciousness as the parent of all horrors.'),
+      N('Mitchell Heisman', 'Philosophical Nihilism', 'Radical Nihilism / Self-Deletion', 'All values equal; experiment in nihilism.'),
+      N('Ernest Becker', 'Existential Psychology', 'Death Anxiety / Character Armor', '“A god who shits” — terror management; denial of death.'),
+      N('Bertrand Russell', 'Modern Skepticism', 'Atheistic Humanism / Stoicism', '“Firm foundation of unyielding despair.”'),
+      N('GK Chesterton', 'Christian Apologetics', 'Faith / Paradox vs Rationalism', 'Reason breeds insanity; practical romance.'),
+      N('C.S. Lewis', 'Christian Apologetics', 'Christian Realism / Dismay', 'God is comfort and terror; begins in dismay.'),
+      N('William James', 'Pragmatism', 'Religious Experience / Sick Soul', 'Healthy-mindedness breaks on the evil facts.'),
+      N('Aldous Huxley', 'Perennial Philosophy', 'Mystical States / Detachment', 'Mind-at-Large glimpsed; disinterested seeing.'),
+      N('Evelyn Underhill', 'Christian Mysticism', 'Mystic Way / Stages', 'Awakening → Purgation → Night → Union.'),
+      N('Thomas Merton', 'Christian Contemplative', 'Contemplative Practice / False Self', 'Recollection; abandon our ideas of happiness.'),
+      N('Thomas Keating', 'Contemplative Theology', 'Divine Therapy / False Self', 'Face the dark side; presence as gift.'),
+      N('A.W. Tozer', 'Evangelical Mysticism', 'Pursuit / Possess Nothing', 'Self is the veil; rend it — possess nothing.'),
+      N('Hinduism — Upanishads', 'Advaita Vedanta', 'Non-Duality / Grace / Renunciation', 'Self (Atman) known beyond intellect; chosen by the Self.'),
+      N('Buddhism', 'Buddhist Philosophy', 'Suffering / Impermanence / Non-Self', 'Dukkha, anatta, śūnyatā.'),
+      N('Taoism', 'Daoist Philosophy', 'Ineffability / Wu-Wei', 'The Tao that can be told is not the eternal Tao.'),
+      N('Swami Vivekananda', 'Advaita Vedanta', 'Realisation > Doctrine / Māyā', 'We are all born idolaters; religion is realization.'),
+      N('Plato — Cave', 'Classical Philosophy', 'Ascent / Forms / Detach Senses', 'Turn from shadows to the sun (noesis).'),
+      N('Pseudo-Dionysius', 'Apophatic Christianity', 'Via Negativa / God as “Nothing”', 'Cause of all things yet “nothing” super-essentially.'),
+      N('Paul Tillich', 'Existential Theology', 'Ultimate Concern / Courage', 'Doubt within faith; courage to be.'),
+      N('Seraphim Rose', 'Orthodox Christianity', 'World as Nothing / God as All', 'Christian “nihilism”: world is nothing, God all.'),
+      N('John Bunyan', 'Puritan', 'Despair / Temptation / Night', '“Nothing but damnation” for two years.'),
+      N('Edgar Saltus', 'Literary Pessimism', 'Philosophical Pessimism', 'Life as calamity; Leopardi & Schopenhauer.'),
+      N('Will Durant', 'History / Philosophy', 'Meaning Crisis / Without God', 'Can men bear to live without God?'),
+      N('John Shelby Spong', 'Progressive Theology', 'Post-Theism / Experience > Dogma', 'Seek God-experience beyond explanations.'),
+      N('Herman Tønnessen', 'Existential Critique', 'Cosmic Situation / Dread', 'Moments of dread reveal absurdity.'),
+      N('Huston Smith', 'Comparative Religion', 'Mystical/Psychedelic Integration', 'Drugs can induce experience; need discipline.'),
+      N('Lev Shestov', 'Existential Religious', 'Despair / Against Reason', 'Philosophy begins in despair; absurd faith.'),
+      N('Angela of Foligno', 'Franciscan Mystic', 'Radical Renunciation', 'Consolation at losses that freed her path.'),
+      N('W.K. Clifford', 'Empirical Skepticism', 'Evidentialism / Responsibility', 'Wrong to believe on insufficient evidence.'),
+      N('Thomas Aquinas — Straw', 'Medieval Scholastic', 'Limits of Reason / Vision', '“All I have written is straw.”'),
+      N('Timothy Leary', 'Psychedelic', 'Altered States / Personal Rite', 'See beyond the social game; own new religion.'),
+      N('Peter Zapffe', 'Philosophical Pessimism', 'Overshot / Defenses', 'Consciousness → cosmic panic; mechanisms.'),
+      N('Montaigne', 'Renaissance Skeptic', 'Prepare to Die / Equanimity', 'To philosophize is to learn to die.'),
+      N('Ecclesiastes', 'Hebrew Wisdom', 'Vanity / Sorrow of Knowledge', 'All is vanity; striving after wind.'),
+      N('Francis de Sales', 'Christian Humanism', 'Everyday Devotion', 'Holiness in ordinary life; temper asceticism.'),
+      N('Thérèse of Lisieux', 'Carmelite Mystic', 'Dark Night / Little Way', 'Remain little; love in small acts.'),
+      N('Martin Heidegger', 'Phenomenology', 'Nothingness / Anxiety / Authenticity', 'Anxiety reveals the Nothing; being-toward-death.')
+    ],
+    links: []
+  };
+
+  // Connect helpers (by label)
+  function L(a,b,why=''){return {source:a, target:b, reason:why}};
+  function N(label, tradition, category, note=''){return {id:label, label, tradition, category, note}};
+
+  // Representative connections (≥ 37)
+  SEED.links = [
+    L('Jesus (New Testament)','Jesus — Two Masters','Renunciation / allegiance split'),
+    L('Augustine — Vain Hopes','Augustine — Two Wills','Divided self'),
+    L('Miguel de Molinos','Meister Eckhart','Nothingness ↔ Emptiness'),
+    L('John of the Cross','Theresa of Avila','Dark night ↔ Mansions'),
+    L('Thomas à Kempis','Montaigne','Memento mori tradition'),
+    L('Martin Luther','Paul Tillich','Grace ↔ Courage to be'),
+    L('Blaise Pascal','Leo Tolstoy','Dread ↔ Meaning crisis'),
+    L('Søren Kierkegaard','Lev Shestov','Despair ↔ Absurd faith'),
+    L('Friedrich Nietzsche — Death of God','Albert Camus','Nihilism ↔ Absurd'),
+    L('Friedrich Nietzsche — Amor Fati','Peter Zapffe','Revaluation vs Defenses'),
+    L('Emil Cioran','Thomas Ligotti','Pessimism ↔ Horror'),
+    L('Mitchell Heisman','Ernest Becker','Value collapse ↔ Terror management'),
+    L('Bertrand Russell','Blaise Pascal','Despair foundations'),
+    L('GK Chesterton','C.S. Lewis','Apologetics / paradox'),
+    L('William James','Aldous Huxley','Sick soul ↔ Psychedelic insight'),
+    L('Evelyn Underhill','John of the Cross','Mystic way ↔ Dark night'),
+    L('Thomas Merton','Thomas Keating','Contemplative practice / false self'),
+    L('A.W. Tozer','Thomas à Kempis','Possess nothing ↔ Vanitas'),
+    L('Hinduism — Upanishads','Swami Vivekananda','Advaita / realization'),
+    L('Buddhism','Taoism','Emptiness ↔ Wu-wei'),
+    L('Plato — Cave','Pseudo-Dionysius','Forms ↔ Via negativa (Neoplatonic)'),
+    L('Paul Tillich','John Shelby Spong','God beyond theism'),
+    L('Seraphim Rose','Ecclesiastes','World as vanity'),
+    L('John Bunyan','Thérèse of Lisieux','Darkness ↔ Little way'),
+    L('Edgar Saltus','Friedrich Nietzsche — Death of God','Pessimism ↔ Nihilism'),
+    L('Will Durant','Bertrand Russell','Without God ↔ Despair'),
+    L('Herman Tønnessen','Ernest Becker','Dread ↔ Denial of death'),
+    L('Huston Smith','Timothy Leary','Integration ↔ Psychedelic rite'),
+    L('Angela of Foligno','Thomas à Kempis','Radical renunciation ↔ Devotion'),
+    L('W.K. Clifford','C.S. Lewis','Evidence ↔ Faith'),
+    L('Thomas Aquinas — Straw','Meister Eckhart','Limits of reason ↔ Unknowing'),
+    L('Peter Zapffe','Emil Cioran','Cosmic panic ↔ Lucid despair'),
+    L('Montaigne','Ecclesiastes','Prepare to die ↔ Vanity'),
+    L('Francis de Sales','Theresa of Avila','Everyday devotion ↔ Mansions'),
+    L('Martin Heidegger','Blaise Pascal','Nothingness ↔ Infinite silence'),
+    L('Martin Heidegger','Søren Kierkegaard','Angst ↔ Despair'),
+    L('Buddhism','Søren Kierkegaard','Anatta vs Self-relation'),
+    L('Taoism','Paul Tillich','Wu-wei vs Courage to be'),
+    L('Swami Vivekananda','John Shelby Spong','Realization vs Post-theism')
+  ];
+
+  // ---------- Persistence ----------
+  const STORAGE_KEY = 'nihiltheism-graph-v1';
+  function saveGraph(data){localStorage.setItem(STORAGE_KEY, JSON.stringify(data));}
+  function loadGraph(){try{const s=localStorage.getItem(STORAGE_KEY); if(!s) return null; return JSON.parse(s);}catch(e){return null}}
+
+  // ---------- Utilities ----------
+  function uniq(arr){return [...new Set(arr)];}
+  function byLabel(label){return graphData.nodes.find(n=>n.id===label||n.label===label)}
+  function linkExists(a,b){return graphData.links.some(l=> (l.source.id||l.source)===a && (l.target.id||l.target)===b || (l.source.id||l.source)===b && (l.target.id||l.target)===a)}
+  function colorFor(node){
+    // Map categories to accents
+    const c = (node.category||'').toLowerCase();
+    if(c.includes('apophatic')||c.includes('mystic')||c.includes('emptiness')) return '#9f6aff'; // purple
+    if(c.includes('existential')||c.includes('dread')||c.includes('nihil')||c.includes('absurd')) return '#f59e0b'; // amber
+    if(c.includes('contempl')||c.includes('devotion')||c.includes('grace')||c.includes('theology')) return '#10b981'; // emerald
+    if(c.includes('pessim')||c.includes('horror')) return '#f43f5e'; // rose
+    return '#8ab4f8'; // slate/blue default
+  }
+
+  function computeStats(data){
+    const n = data.nodes.length;
+    const m = data.links.length;
+    const deg = Object.fromEntries(data.nodes.map(n=>[n.id,0]));
+    data.links.forEach(l=>{deg[l.source.id||l.source]++; deg[l.target.id||l.target]++;});
+    const degrees = Object.entries(deg).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const byCat = {};
+    data.nodes.forEach(n=>{byCat[n.category]= (byCat[n.category]||0)+1});
+    const byTrad = {};
+    data.nodes.forEach(n=>{byTrad[n.tradition]= (byTrad[n.tradition]||0)+1});
+    return {n, m, degrees, byCat, byTrad};
+  }
+
+  function jaccardTokens(a,b){
+    const ta = new Set(a.toLowerCase().split(/[^a-z]+/).filter(Boolean));
+    const tb = new Set(b.toLowerCase().split(/[^a-z]+/).filter(Boolean));
+    const inter = [...ta].filter(x=>tb.has(x));
+    const uni = new Set([...ta, ...tb]);
+    return inter.length / Math.max(1, uni.size);
+  }
+
+  function suggestEdges(max=10){
+    const edges=[];
+    for(let i=0;i<graphData.nodes.length;i++){
+      for(let j=i+1;j<graphData.nodes.length;j++){
+        const A=graphData.nodes[i], B=graphData.nodes[j];
+        if(linkExists(A.id,B.id)) continue;
+        let score = 0;
+        if(A.category===B.category) score += 0.35;
+        if(A.tradition===B.tradition) score += 0.25;
+        score += 0.4 * jaccardTokens(A.note||'', B.note||'');
+        if(score>0.28){
+          edges.push({a:A.id,b:B.id,score: +score.toFixed(3), why:`${A.category===B.category? 'same category; ':''}${A.tradition===B.tradition? 'same tradition; ':''}text overlap.`});
+        }
+      }
+    }
+    return edges.sort((x,y)=>y.score-x.score).slice(0,max);
+  }
+
+  function extractConcepts(text){
+    // ultra-simple: pull recurring nouns/caps and nihilist lexemes
+    const focus = ['nihil','void','nothing','absurd','despair','anxiety','death','empti','silence','faith','grace','suffering','ego','self','renunciation','kenosis','wu','memento','mortality'];
+    const words = text.split(/[^A-Za-zÀ-ÖØ-öø-ÿ]+/).filter(Boolean);
+    const counts = {};
+    for(const w of words){
+      const k = w.toLowerCase();
+      if(k.length<5) continue;
+      if(/[A-Z]/.test(w[0]) || focus.some(f=>k.includes(f))) counts[k]=(counts[k]||0)+1;
+    }
+    const items = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x[0]);
+    return items;
+  }
+
+  // ---------- Initialize Graph ----------
+  let graphData = loadGraph() || SEED;
+
+  // Build filter options
+  const selCat = document.getElementById('filter-category');
+  const selTrad = document.getElementById('filter-tradition');
+  function rebuildFilters(){
+    const cats = ['All', ...uniq(graphData.nodes.map(n=>n.category).filter(Boolean))];
+    const trads = ['All', ...uniq(graphData.nodes.map(n=>n.tradition).filter(Boolean))];
+    selCat.innerHTML = cats.map(c=>`<option>${c}</option>`).join('');
+    selTrad.innerHTML = trads.map(t=>`<option>${t}</option>`).join('');
+  }
+  rebuildFilters();
+
+  // Force-Graph instance
+  const elem = document.getElementById('graph');
+  const FG = ForceGraph()(elem)
+    .width(elem.clientWidth)
+    .height(elem.clientHeight)
+    .backgroundColor('rgba(0,0,0,0)')
+    .graphData(graphData)
+    .nodeId('id')
+    .nodeVal(n=>6 + Math.min(12, (graphData.links.filter(l=> (l.source.id||l.source)===n.id || (l.target.id||l.target)===n.id).length)))
+    .nodeColor(n=>colorFor(n))
+    .nodeLabel(n=>`${n.label}\n${n.tradition} • ${n.category}`)
+    .onNodeClick(n=> openDrawer(n))
+    .linkColor(()=> 'rgba(255,255,255,0.25)')
+    .linkDirectionalParticles(0)
+    .linkLabel(l=> l.reason||'')
+    .d3Force('charge').strength(-180)
+    .d3VelocityDecay(0.25);
+
+  window.addEventListener('resize', ()=>{
+    FG.width(elem.clientWidth).height(elem.clientHeight)
+  });
+
+  // Labels toggle
+  const chkLabels = document.getElementById('chk-show-labels');
+  chkLabels.addEventListener('change', ()=>{
+    FG.nodeCanvasObject((node, ctx, globalScale)=>{
+      // draw node circle
+      const size = 6 + Math.min(12, (graphData.links.filter(l=> (l.source.id||l.source)===node.id || (l.target.id||l.target)===node.id).length));
+      ctx.beginPath(); ctx.arc(node.x, node.y, size, 0, 2*Math.PI, false); ctx.fillStyle = colorFor(node); ctx.fill();
+      if(!chkLabels.checked) return;
+      const label = node.label;
+      const fontSize = 12 / globalScale;
+      ctx.font = `${fontSize}px Inter`;
+      const textWidth = ctx.measureText(label).width;
+      const bW = textWidth + 10, bH = fontSize + 6;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(node.x - bW/2, node.y - size - bH - 2, bW, bH);
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+      ctx.strokeRect(node.x - bW/2, node.y - size - bH - 2, bW, bH);
+      ctx.fillStyle = '#e6e6ef';
+      ctx.fillText(label, node.x - textWidth/2, node.y - size - 7);
+    });
+    FG.refresh();
+  });
+
+  // Search & highlight
+  const search = document.getElementById('search');
+  const chkHighlight = document.getElementById('chk-highlight');
+  search.addEventListener('input', ()=> applyFilters());
+  document.getElementById('btn-clear').addEventListener('click', ()=>{search.value=''; applyFilters();})
+
+  selCat.addEventListener('change', applyFilters);
+  selTrad.addEventListener('change', applyFilters);
+
+  function applyFilters(){
+    const q = search.value.trim().toLowerCase();
+    const cat = selCat.value; const trad = selTrad.value;
+    const nodes = graphData.nodes.map(n=> ({...n}));
+    nodes.forEach(n=>{n._match = !q || (n.label.toLowerCase().includes(q) || (n.note||'').toLowerCase().includes(q) || (n.category||'').toLowerCase().includes(q));});
+    const visibleIds = new Set(nodes.filter(n=> (cat==='All'||n.category===cat) && (trad==='All'||n.tradition===trad) && (!q || n._match)).map(n=>n.id));
+    const filt = {
+      nodes: nodes.filter(n=>visibleIds.has(n.id)),
+      links: graphData.links.filter(l=> visibleIds.has(l.source.id||l.source) && visibleIds.has(l.target.id||l.target))
+    };
+    FG.graphData(filt);
+    if(chkHighlight.checked && q){
+      filt.nodes.forEach(n=>{ if(n._match) FG.emitParticle(n)});
+    }
+  }
+
+  // Center button
+  document.getElementById('btn-center').addEventListener('click', ()=> FG.zoomToFit(600, 50));
+
+  // Stats modal
+  const statsModal = document.getElementById('stats-modal');
+  document.getElementById('btn-stats').addEventListener('click', ()=>{
+    const s = computeStats(graphData);
+    const toList = obj => Object.entries(obj).map(([k,v])=>`<div class='flex justify-between'><span>${k}</span><b>${v}</b></div>`).join('');
+    document.getElementById('stats-content').innerHTML = `
+      <div class='grid grid-cols-2 gap-4'>
+        <div class='glass p-3 rounded-lg'>
+          <div class='font-semibold mb-1'>Counts</div>
+          <div class='text-sm'>Nodes: <b>${s.n}</b></div>
+          <div class='text-sm'>Links: <b>${s.m}</b></div>
+        </div>
+        <div class='glass p-3 rounded-lg'>
+          <div class='font-semibold mb-1'>Top Degrees</div>
+          ${s.degrees.map(([id,d])=>`<div class='flex justify-between'><span>${id}</span><b>${d}</b></div>`).join('')}
+        </div>
+        <div class='glass p-3 rounded-lg col-span-2'>
+          <div class='font-semibold mb-1'>By Category</div>
+          ${toList(s.byCat)}
+        </div>
+        <div class='glass p-3 rounded-lg col-span-2'>
+          <div class='font-semibold mb-1'>By Tradition</div>
+          ${toList(s.byTrad)}
+        </div>
+      </div>`;
+    statsModal.classList.remove('hidden');
+  });
+  document.getElementById('btn-close-stats').addEventListener('click', ()=> statsModal.classList.add('hidden'));
+
+  // Drawer
+  const drawer = document.getElementById('drawer');
+  const drawerContent = document.getElementById('drawer-content');
+  document.getElementById('btn-close-drawer').addEventListener('click', ()=> drawer.classList.add('hidden'));
+  function openDrawer(n){
+    drawerContent.innerHTML = `
+      <div class='text-base font-bold'>${n.label}</div>
+      <div class='text-xs text-[var(--muted)] mt-1'>${n.tradition || ''} • ${n.category || ''}</div>
+      <div class='mt-3 whitespace-pre-wrap leading-relaxed'>${(n.note||'').replace(/\n/g,'<br>')}</div>
+      <div class='mt-3 text-xs text-[var(--muted)]'>Connections</div>
+      <div class='mt-1 space-y-1'>
+        ${graphData.links.filter(l=> (l.source.id||l.source)===n.id || (l.target.id||l.target)===n.id)
+          .map(l=>{
+            const other = (l.source.id||l.source)===n.id ? (l.target.id||l.target) : (l.source.id||l.source);
+            return `<div class='flex items-start justify-between gap-2'>
+              <div><span class='chip'>${other}</span></div>
+              <div class='text-xs text-[var(--muted)]'>${l.reason||''}</div>
+            </div>`
+          }).join('') || '<div class="text-xs">No connections yet.</div>'}
+      </div>
+      <div class='mt-3 flex gap-2'>
+        <button class='btn' onclick='removeNode("${n.id}")'>Delete</button>
+        <button class='btn' onclick='editNodePrompt("${n.id}")'>Edit</button>
+      </div>
+    `;
+    drawer.classList.remove('hidden');
+  }
+
+  // Add Node
+  document.getElementById('btn-add-node').addEventListener('click', ()=>{
+    const label = document.getElementById('new-label').value.trim();
+    if(!label) return alert('Enter a label');
+    if(byLabel(label)) return alert('Node already exists');
+    const tradition = document.getElementById('new-tradition').value.trim();
+    const category = document.getElementById('new-category').value.trim();
+    const note = document.getElementById('new-quote').value.trim();
+    graphData.nodes.push(N(label, tradition, category, note));
+    saveGraph(graphData); rebuildFilters(); FG.graphData(graphData); applyFilters();
+    document.getElementById('new-label').value='';
+    document.getElementById('new-tradition').value='';
+    document.getElementById('new-category').value='';
+    document.getElementById('new-quote').value='';
+  });
+
+  // Edit/Delete
+  window.removeNode = function(id){
+    if(!confirm('Delete node and its links?')) return;
+    graphData.links = graphData.links.filter(l=> (l.source.id||l.source)!==id && (l.target.id||l.target)!==id);
+    graphData.nodes = graphData.nodes.filter(n=> n.id!==id);
+    saveGraph(graphData); rebuildFilters(); FG.graphData(graphData); drawer.classList.add('hidden');
+  }
+  window.editNodePrompt = function(id){
+    const n = byLabel(id); if(!n) return;
+    const label = prompt('Label', n.label) || n.label;
+    const tradition = prompt('Tradition', n.tradition||'') || n.tradition;
+    const category = prompt('Category', n.category||'') || n.category;
+    const note = prompt('Note/Quote', n.note||'') || n.note;
+    n.id = label; n.label=label; n.tradition=tradition; n.category=category; n.note=note;
+    saveGraph(graphData); rebuildFilters(); FG.graphData(graphData); applyFilters();
+  }
+
+  // Add Link
+  document.getElementById('btn-add-link').addEventListener('click', ()=>{
+    const a = document.getElementById('link-a').value.trim();
+    const b = document.getElementById('link-b').value.trim();
+    const r = document.getElementById('link-reason').value.trim();
+    if(!a||!b) return alert('Enter both labels');
+    if(!byLabel(a)||!byLabel(b)) return alert('Unknown node label');
+    if(linkExists(a,b)) return alert('Link already exists');
+    graphData.links.push(L(a,b,r)); saveGraph(graphData); FG.graphData(graphData); applyFilters();
+    document.getElementById('link-a').value='';
+    document.getElementById('link-b').value='';
+    document.getElementById('link-reason').value='';
+  });
+
+  // Suggestions
+  function renderSuggestions(){
+    const box = document.getElementById('suggestions');
+    const sugg = suggestEdges(12);
+    if(!sugg.length){ box.innerHTML = '<div class="text-xs text-[var(--muted)]">No suggestions (add more nodes).</div>'; return; }
+    box.innerHTML = sugg.map(s=>`<div class='glass p-2 rounded-lg'>
+      <div class='flex items-center justify-between'><div class='font-semibold text-sm'>${s.a} ↔ ${s.b}</div><div class='badge bg-[var(--panel-2)]'>${s.score}</div></div>
+      <div class='text-xs text-[var(--muted)] mt-1'>${s.why}</div>
+      <div class='mt-2 flex gap-2'>
+        <button class='btn' onclick='acceptSugg("${s.a}","${s.b}")'>Add Link</button>
+        <button class='btn' onclick='seedNodeFromPair("${s.a}","${s.b}")'>New Concept</button>
+      </div>
+    </div>`).join('');
+  }
+  window.acceptSugg = function(a,b){ graphData.links.push(L(a,b,'Heuristic suggestion')); saveGraph(graphData); FG.graphData(graphData); renderSuggestions(); applyFilters(); }
+  window.seedNodeFromPair = function(a,b){
+    const A = byLabel(a), B = byLabel(b);
+    const name = prompt('New concept (e.g., Ontological Uncertainty)'); if(!name) return;
+    const cat = A.category===B.category? A.category : 'Sub-Concept';
+    const trad = A.tradition===B.tradition? A.tradition : '—';
+    graphData.nodes.push(N(name, trad, cat, `Derived from relation: ${A.label} ↔ ${B.label}`));
+    graphData.links.push(L(name, A.id, 'Derived concept')); graphData.links.push(L(name, B.id, 'Derived concept'));
+    saveGraph(graphData); rebuildFilters(); FG.graphData(graphData); renderSuggestions(); applyFilters();
+  }
+  renderSuggestions();
+
+  // Extract Concepts
+  document.getElementById('btn-extract').addEventListener('click', ()=>{
+    const txt = document.getElementById('txt-extract').value.trim();
+    if(!txt) return;
+    const items = extractConcepts(txt);
+    document.getElementById('extract-out').innerHTML = items.map(x=>`<span class='tag mr-1'>${x}</span>`).join('') || '—';
+  });
+
+  // Export / Import
+  document.getElementById('btn-export').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(graphData, null, 2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'nihiltheism-graph.json'; a.click(); URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('file-import').addEventListener('change', (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader(); reader.onload = ev => {
+      try{
+        const obj = JSON.parse(ev.target.result);
+        if(!obj.nodes || !obj.links) throw new Error('Invalid JSON schema');
+        graphData = obj; saveGraph(graphData); rebuildFilters(); FG.graphData(graphData); applyFilters(); renderSuggestions();
+      }catch(err){ alert('Failed to import JSON: '+err.message) }
+    }; reader.readAsText(file);
+  });
+
+  // Reset
+  document.getElementById('btn-reset').addEventListener('click', ()=>{
+    if(!confirm('Reset to seed data? This clears your saved graph.')) return;
+    localStorage.removeItem(STORAGE_KEY); graphData = JSON.parse(JSON.stringify(SEED));
+    rebuildFilters(); FG.graphData(graphData); applyFilters(); renderSuggestions();
+  });
+
+  // Initial filter application
+  applyFilters();
+
+  </script>
+</body>
+</html>

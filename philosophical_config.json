@@ -1,0 +1,238 @@
+{
+  "philosophical_reasoning": {
+    "enable_philosophy": true,
+    "philosophy_integration_mode": "full",
+    "description": "Master control for philosophical capabilities. Modes: 'off', 'partial', 'full'"
+  },
+  
+  "inner_monologue": {
+    "depth": 3,
+    "enable_structured_reflection": true,
+    "reflection_prompts": [
+      "What assumptions underlie this philosophical position?",
+      "How does this relate to the fundamental meaninglessness/meaning tension?",
+      "What would a Nihiltheistic perspective reveal here?",
+      "Where might humor emerge from this incongruity?",
+      "What novel connections can be drawn?"
+    ],
+    "description": "Controls the depth and structure of internal philosophical reflection"
+  },
+  
+  "nihiltheism_framework": {
+    "enable_nihiltheism": true,
+    "nihiltheism_weight": 0.5,
+    "enable_terminology_generation": true,
+    "enable_thought_experiments": true,
+    "enable_synthesis": true,
+    "core_concepts": [
+      "transcendent_meaninglessness",
+      "sacred_absurdity", 
+      "divine_indifference",
+      "mystical_despair",
+      "holy_emptiness",
+      "blessed_incongruity",
+      "ultimate_humor",
+      "cosmic_joke"
+    ],
+    "description": "Configuration for Nihiltheistic philosophical framework synthesis"
+  },
+  
+  "humorous_nihilism": {
+    "enable_humor": true,
+    "humor_factor": 0.3,
+    "humor_techniques": [
+      "incongruity_highlighting",
+      "absurdist_reframing",
+      "ironic_juxtaposition", 
+      "comedic_timing",
+      "unexpected_conclusions",
+      "playful_wordplay"
+    ],
+    "amusement_threshold": 0.6,
+    "description": "Configuration for applying humorous perspectives to philosophical problems"
+  },
+  
+  "reflection_and_iteration": {
+    "enable_reflection": true,
+    "reflection_iterations": 2,
+    "iteration_depth": "deep",
+    "enable_self_critique": true,
+    "enable_improvement_suggestions": true,
+    "reflection_criteria": [
+      "assumption_questioning",
+      "originality_assessment", 
+      "logical_gap_identification",
+      "nihiltheistic_advancement",
+      "humor_enhancement"
+    ],
+    "description": "Controls the reflection and iterative improvement process"
+  },
+  
+  "terminology_generation": {
+    "enable_new_terminology": true,
+    "terms_per_concept": 3,
+    "originality_threshold": 0.7,
+    "etymology_sources": {
+      "nihilistic_roots": [
+        "void", "empty", "null", "absent", "hollow", "barren", 
+        "futile", "meaningless", "worthless", "pointless", "absurd", "random"
+      ],
+      "theistic_roots": [
+        "divine", "sacred", "holy", "blessed", "eternal", "transcendent",
+        "infinite", "ultimate", "sublime", "mystical", "spiritual", "cosmic"
+      ],
+      "synthesis_connectors": [
+        "trans", "meta", "para", "ultra", "proto", "quasi", 
+        "pseudo", "neo", "ante", "post", "inter", "super", "hyper"
+      ]
+    },
+    "description": "Configuration for generating novel philosophical terminology"
+  },
+  
+  "thought_experiments": {
+    "enable_experiments": true,
+    "experiment_templates": [
+      "AI_consciousness_meaninglessness",
+      "digital_afterlife_nihilism",
+      "virtual_reality_transcendence", 
+      "algorithmic_prayer_systems",
+      "computational_theology",
+      "posthuman_spiritual_crisis"
+    ],
+    "enable_custom_scenarios": true,
+    "scenario_complexity": "high",
+    "description": "Configuration for generating philosophical thought experiments"
+  },
+  
+  "external_apis": {
+    "enable_external_validation": false,
+    "use_philpapers_api": false,
+    "use_stanford_encyclopedia": false,
+    "api_timeout": 10.0,
+    "max_retries": 3,
+    "originality_checking": false,
+    "academic_validation": false,
+    "description": "Configuration for external philosophical database integration (disabled by default)"
+  },
+  
+  "generation_parameters": {
+    "philosophical_temperature": 0.8,
+    "creativity_boost": 0.2,
+    "coherence_weight": 0.7,
+    "novelty_preference": 0.6,
+    "humor_integration_rate": 0.4,
+    "synthesis_complexity": "medium",
+    "description": "Parameters controlling the philosophical generation process"
+  },
+  
+  "output_formatting": {
+    "include_metadata": true,
+    "show_reasoning_process": true,
+    "include_confidence_scores": true,
+    "format_as_academic": false,
+    "include_citations": false,
+    "enable_markdown": true,
+    "description": "Configuration for formatting philosophical outputs"
+  },
+  
+  "evaluation_metrics": {
+    "track_originality": true,
+    "track_coherence": true,
+    "track_humor_effectiveness": true,
+    "track_synthesis_quality": true,
+    "track_terminology_adoption": false,
+    "enable_self_assessment": true,
+    "description": "Metrics for evaluating philosophical reasoning quality"
+  },
+  
+  "advanced_features": {
+    "enable_cross_cultural_perspectives": false,
+    "enable_historical_contextualization": false,
+    "enable_multi_paradigm_synthesis": true,
+    "enable_recursive_questioning": true,
+    "enable_meta_philosophical_analysis": true,
+    "description": "Advanced philosophical reasoning features (experimental)"
+  },
+  
+  "safety_and_ethics": {
+    "avoid_harmful_conclusions": true,
+    "respect_cultural_sensitivities": true,
+    "maintain_intellectual_humility": true,
+    "acknowledge_limitations": true,
+    "promote_constructive_discourse": true,
+    "description": "Safety and ethical guidelines for philosophical reasoning"
+  },
+  
+  "debugging_and_logging": {
+    "enable_debug_mode": false,
+    "log_philosophical_processes": true,
+    "save_intermediate_results": false,
+    "track_performance_metrics": true,
+    "enable_verbose_output": false,
+    "description": "Configuration for debugging and performance monitoring"
+  },
+  
+  "customization": {
+    "custom_philosophical_prompts": [],
+    "custom_synthesis_templates": [],
+    "custom_humor_patterns": [],
+    "custom_reflection_questions": [],
+    "user_defined_concepts": [],
+    "description": "User customization options for philosophical frameworks"
+  },
+  
+  "preset_configurations": {
+    "minimalist": {
+      "enable_philosophy": true,
+      "inner_monologue_depth": 1,
+      "reflection_iterations": 1,
+      "nihiltheism_weight": 0.3,
+      "humor_factor": 0.2,
+      "enable_terminology_generation": false,
+      "enable_thought_experiments": false
+    },
+    "standard": {
+      "enable_philosophy": true,
+      "inner_monologue_depth": 3,
+      "reflection_iterations": 2,
+      "nihiltheism_weight": 0.5,
+      "humor_factor": 0.3,
+      "enable_terminology_generation": true,
+      "enable_thought_experiments": true
+    },
+    "comprehensive": {
+      "enable_philosophy": true,
+      "inner_monologue_depth": 5,
+      "reflection_iterations": 3,
+      "nihiltheism_weight": 0.7,
+      "humor_factor": 0.5,
+      "enable_terminology_generation": true,
+      "enable_thought_experiments": true,
+      "enable_external_validation": true,
+      "enable_meta_philosophical_analysis": true
+    },
+    "research": {
+      "enable_philosophy": true,
+      "inner_monologue_depth": 4,
+      "reflection_iterations": 4,
+      "nihiltheism_weight": 0.6,
+      "humor_factor": 0.2,
+      "enable_terminology_generation": true,
+      "enable_thought_experiments": true,
+      "originality_threshold": 0.8,
+      "academic_validation": true,
+      "include_citations": true
+    }
+  },
+  
+  "version_info": {
+    "config_version": "1.0.0",
+    "philosophical_framework_version": "1.0.0",
+    "last_updated": "2024-05-29",
+    "compatibility": {
+      "min_python_version": "3.8",
+      "required_packages": ["torch", "numpy", "json", "time", "typing"],
+      "optional_packages": ["requests", "concurrent.futures"]
+    }
+  }
+}
